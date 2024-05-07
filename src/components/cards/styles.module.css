@@ -1,0 +1,76 @@
+.card-shape {
+  width: 71px;
+  height: 96px;
+  border: none;
+}
+
+.card {
+  background-image: url("/cards.png");
+
+  --card-gap-x: 75px;
+  --card-gap-y: 100px;
+  --card-offset-x: -15px;
+  --card-offset-y: -35px;
+
+  background-position: var(--card-offset-x) var(--card-offset-y);
+}
+
+.card-spades {
+  background-position-x: calc(var(--card-offset-x) - 0 * var(--card-gap-x));
+}
+.card-clubs {
+  background-position-x: calc(var(--card-offset-x) - 1 * var(--card-gap-x));
+}
+.card-hearts {
+  background-position-x: calc(var(--card-offset-x) - 2 * var(--card-gap-x));
+}
+.card-diamonds {
+  background-position-x: calc(var(--card-offset-x) - 3 * var(--card-gap-x));
+}
+
+.card-K {
+  background-position-y: calc(var(--card-offset-y) - 0 * var(--card-gap-y));
+}
+.card-Q {
+  background-position-y: calc(var(--card-offset-y) - 1 * var(--card-gap-y));
+}
+.card-J {
+  background-position-y: calc(var(--card-offset-y) - 2 * var(--card-gap-y));
+}
+.card-A {
+  background-position-y: calc(var(--card-offset-y) - 3 * var(--card-gap-y));
+}
+.card-2 {
+  background-position-y: calc(var(--card-offset-y) - 4 * var(--card-gap-y));
+}
+.card-3 {
+  background-position-y: calc(var(--card-offset-y) - 5 * var(--card-gap-y));
+}
+.card-4 {
+  background-position-y: calc(var(--card-offset-y) - 6 * var(--card-gap-y));
+}
+.card-5 {
+  background-position-y: calc(var(--card-offset-y) - 7 * var(--card-gap-y));
+}
+.card-6 {
+  background-position-y: calc(var(--card-offset-y) - 8 * var(--card-gap-y));
+}
+.card-7 {
+  background-position-y: calc(var(--card-offset-y) - 9 * var(--card-gap-y));
+}
+.card-8 {
+  background-position-y: calc(var(--card-offset-y) - 10 * var(--card-gap-y));
+}
+.card-9 {
+  background-position-y: calc(var(--card-offset-y) - 11 * var(--card-gap-y));
+}
+.card-10 {
+  background-position-y: calc(var(--card-offset-y) - 12 * var(--card-gap-y));
+}
+
+.card-placeholder {
+  background-position: -15px -1368px;
+}
+.card-hidden {
+  background-position: -92px -1368px;
+}

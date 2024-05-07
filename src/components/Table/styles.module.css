@@ -1,0 +1,30 @@
+.table {
+  background: url("/felt.png");
+}
+
+.table-grid {
+  display: grid;
+  height: 100%;
+  /* gap: 1rem; */
+
+  --slots: 10;
+
+  grid-template-columns: repeat(var(--slots), 1fr);
+  grid-template-rows: 100px 1fr 100px;
+}
+
+.table-hidden-stack {
+  grid-row: 3;
+  grid-column: var(--slots);
+  position: relative;
+  display: flex;
+}
+
+.table-hidden-decks-place {
+  grid-row: 3;
+  grid-column: var(--slots);
+}
+
+.table-hidden-stack > div {
+  position: relative;
+}
