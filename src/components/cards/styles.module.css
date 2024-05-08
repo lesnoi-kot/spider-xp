@@ -6,6 +6,7 @@
 
 .card {
   background-image: url("/cards.png");
+  user-select: none;
 
   --card-gap-x: 75px;
   --card-gap-y: 100px;

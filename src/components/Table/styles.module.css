@@ -3,9 +3,10 @@
 }
 
 .table-grid {
+  position: relative;
   display: grid;
   height: 100%;
-  /* gap: 1rem; */
+  gap: 1rem;
 
   --slots: 10;
 
