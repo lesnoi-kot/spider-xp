@@ -2,8 +2,8 @@ import { For } from "solid-js";
 import clsx from "clsx";
 import range from "lodash/range";
 
-import { Card, CardPlaceholder, HiddenCard } from "../cards";
-import * as store from "../../store";
+import { TableCard, CardPlaceholder, HiddenCard } from "@/components/cards";
+import * as store from "@/stores/game";
 
 import css from "./styles.module.css";
 
@@ -22,7 +22,11 @@ export function Table() {
 
       <For each={store.game.table}>
         {(cardColumn) => (
-          <For each={cardColumn}>{(card) => <Card {...card} />}</For>
+          <For each={cardColumn}>
+            {(card) => {
+              return <TableCard {...card} />;
+            }}
+          </For>
         )}
       </For>
 
@@ -32,10 +36,8 @@ export function Table() {
 }
 
 function HiddenCardsStack() {
-  const hiddenDecksCount = store.getHiddenDecksCount();
-
   return (
-    <For each={range(hiddenDecksCount)}>
+    <For each={range(store.getHiddenDecksCount())}>
       {(i) => (
         <div
           class={css["table-hidden-decks-place"]}

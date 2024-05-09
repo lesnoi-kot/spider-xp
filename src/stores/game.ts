@@ -3,38 +3,7 @@ import { createStore, produce } from "solid-js/store";
 import range from "lodash/range";
 import shuffle from "lodash/shuffle";
 
-export const SUIT_SIZE = 13;
-export const SUITS = ["spades", "hearts", "clubs", "diamonds"] as const;
-export const RANKS = [
-  "A",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "10",
-  "J",
-  "Q",
-  "K",
-] as const;
-
-export type Suit = (typeof SUITS)[number];
-export type Rank = (typeof RANKS)[number];
-
-export type Card = {
-  suit: Suit;
-  rank: Rank;
-};
-
-export type TableCard = Card & {
-  id: string;
-  row: number;
-  column: number;
-  hidden: boolean;
-};
+import { Card, SUITS, TableCard, cardsStackable, getDeck } from "@/models";
 
 export type GameConfig = {
   slots: 10;
@@ -46,28 +15,38 @@ export type GameState = {
   readonly slots: number;
   deck: Card[];
   table: TableCard[][];
+  removed: Card[];
 };
+
+export const [game, setGame] = createStore(
+  newGameState({
+    slots: 10,
+    suitCount: 1,
+    totalDecks: 8,
+  })
+);
 
 export function newGameState({
   slots,
   suitCount,
   totalDecks,
 }: GameConfig): GameState {
+  const INITIAL_CARDS_COUNT = 54;
   const allCards = shuffle(
     range(totalDecks / suitCount).flatMap(() =>
       SUITS.slice(0, suitCount).flatMap(getDeck)
     )
   );
-  const initialCards = allCards.slice(0, 54).map(
+  const initialCards = allCards.slice(0, INITIAL_CARDS_COUNT).map(
     (card, i): TableCard => ({
       id: nanoid(),
-      hidden: i < 54 - slots,
-      row: ~~(i / slots),
+      hidden: i < INITIAL_CARDS_COUNT - slots,
+      row: Math.floor(i / slots),
       column: i % slots,
       ...card,
     })
   );
-  const hiddenCards = allCards.slice(54);
+  const hiddenCards = allCards.slice(INITIAL_CARDS_COUNT);
 
   return {
     slots,
@@ -75,47 +54,13 @@ export function newGameState({
     table: range(slots).map((column) =>
       initialCards.filter((card) => card.column === column)
     ),
+    removed: [],
   };
-}
-
-export function getDeck(suit: Suit): Card[] {
-  return RANKS.map((rank) => ({ suit, rank }));
-}
-
-function cardsStackable(from: TableCard, to: TableCard): boolean {
-  return (
-    from.suit === to.suit && RANKS.indexOf(from.rank) < RANKS.indexOf(to.rank)
-  );
-}
-
-export function areCardsSorted(cards: TableCard[]): boolean {
-  if (cards.length === 0) {
-    return false;
-  }
-
-  let [bottomCard] = cards;
-
-  for (const topCard of cards.slice(1)) {
-    if (!cardsStackable(topCard, bottomCard)) {
-      return false;
-    }
-    bottomCard = topCard;
-  }
-
-  return true;
 }
 
 export function revealTopCards(game: GameState): GameState {
   return game;
 }
-
-export const [game, setGame] = createStore(
-  newGameState({
-    slots: 10,
-    suitCount: 4,
-    totalDecks: 8,
-  })
-);
 
 export function getCardsAfterCard(card: TableCard): TableCard[] {
   const cards = game.table[card.column].filter((c) => c.row >= card.row);
@@ -134,6 +79,15 @@ export function moveCards(cards: TableCard[], toColumn: number) {
   const fromColumn = cards[0].column;
 
   if (fromColumn === toColumn) {
+    return;
+  }
+
+  const lastCardOfTargetColumn = game.table[toColumn].at(-1);
+
+  if (
+    lastCardOfTargetColumn &&
+    !cardsStackable(cards[0], lastCardOfTargetColumn)
+  ) {
     return;
   }
 

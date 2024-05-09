@@ -1,2 +1,2 @@
 export { CardPlaceholder, HiddenCard } from "./placeholders";
-export { Card } from "./Card";
+export { TableCard } from "./TableCard";

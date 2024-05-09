@@ -1,21 +1,13 @@
-import { createMemo, createSignal, onMount } from "solid-js";
-import clsx from "clsx";
+import { createSignal } from "solid-js";
 
-import {
-  game,
-  type Card,
-  type TableCard,
-  getCardsAfterCard,
-  moveCards,
-  areCardsSorted,
-} from "../../store";
+import type { TableCard } from "@/models";
 
-import css from "./styles.module.css";
+import { game, moveCards } from "./game";
 
-const NULL_POSITION = { X: 0, Y: 0, originX: 0, originY: 0 };
+export const NULL_POSITION = { X: 0, Y: 0, originX: 0, originY: 0 };
 
-const [dragedCards, setDragedCards] = createSignal<TableCard[]>([]);
-const [mouseData, setMouseData] =
+export const [dragedCards, setDragedCards] = createSignal<TableCard[]>([]);
+export const [mouseData, setMouseData] =
   createSignal<typeof NULL_POSITION>(NULL_POSITION);
 
 document.addEventListener("mousemove", (event) => {
@@ -60,58 +52,6 @@ document.addEventListener("mouseup", () => {
     moveCards(handCards, targetColumn);
   }
 });
-
-export function Card(card: TableCard) {
-  const { id, suit, rank, row, column, hidden } = card;
-
-  const position = createMemo(() => {
-    if (dragedCards().find((card) => card.id === id)) {
-      return mouseData();
-    }
-
-    return NULL_POSITION;
-  });
-
-  return (
-    <div
-      id={id}
-      class={clsx(
-        css["card-shape"],
-        css.card,
-        css[`card-${suit}`],
-        css[`card-${rank}`],
-        hidden && css["card-hidden"]
-      )}
-      style={{
-        "margin-top": `${row * (hidden ? 7 : 7)}px`,
-        "grid-row": "1",
-        "grid-column": `${column + 1}`,
-        translate: `${position().X}px ${position().Y}px`,
-        "z-index": position() === NULL_POSITION ? undefined : "10",
-      }}
-      draggable="false"
-      onMouseDown={(event) => {
-        if (card.hidden || event.button !== 0) {
-          return;
-        }
-
-        const handCards = getCardsAfterCard(card);
-
-        if (!areCardsSorted(handCards)) {
-          return;
-        }
-
-        setDragedCards(handCards);
-        setMouseData({
-          X: -1,
-          Y: -1,
-          originX: event.clientX,
-          originY: event.clientY,
-        });
-      }}
-    />
-  );
-}
 
 function calculateOverlapArea(rect1: DOMRect, rect2: DOMRect): number {
   const xOverlap = Math.max(
