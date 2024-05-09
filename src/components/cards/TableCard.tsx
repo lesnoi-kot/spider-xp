@@ -1,7 +1,7 @@
 import { createMemo } from "solid-js";
 import clsx from "clsx";
 
-import { type TableCard, areCardsSorted } from "@/models";
+import { type TableCard, cardsSorted } from "@/models";
 import {
   NULL_POSITION,
   dragedCards,
@@ -49,7 +49,7 @@ export function TableCard(card: TableCard) {
 
         const handCards = getCardsAfterCard(card);
 
-        if (!areCardsSorted(handCards)) {
+        if (!cardsSorted(handCards)) {
           return;
         }
 

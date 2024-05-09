@@ -15,10 +15,11 @@ document.addEventListener("mousemove", (event) => {
     return;
   }
 
-  setMouseData((data) => ({
-    ...data,
-    X: event.clientX - data.originX,
-    Y: event.clientY - data.originY,
+  setMouseData(({ originX, originY }) => ({
+    originX,
+    originY,
+    X: event.clientX - originX,
+    Y: event.clientY - originY,
   }));
 });
 
@@ -28,18 +29,24 @@ document.addEventListener("mouseup", () => {
     return;
   }
 
-  const targetColumn = findMaxOverlapRectIndex(
+  const targetColumns = findMaxOverlapRectIndexes(
     mergeDOMRects(
       handCards.map((card) =>
         document.getElementById(card.id)!.getBoundingClientRect()
       )
     ),
-    game.table.map((slot) =>
+    game.table.map((stack, slot) =>
       mergeDOMRects(
-        slot
+        stack
           .filter((card) => !handCards.includes(card))
+          .slice(-1)
           .map((card) =>
             document.getElementById(card.id)!.getBoundingClientRect()
+          )
+          .concat(
+            document
+              .getElementById(game.slots[slot].id)!
+              .getBoundingClientRect()
           )
       )
     )
@@ -48,11 +55,14 @@ document.addEventListener("mouseup", () => {
   setDragedCards([]);
   setMouseData(NULL_POSITION);
 
-  if (targetColumn !== -1) {
-    moveCards(handCards, targetColumn);
+  for (const targetColumn of targetColumns) {
+    if (moveCards(handCards, targetColumn)) {
+      break;
+    }
   }
 });
 
+/* Geometry helpers */
 function calculateOverlapArea(rect1: DOMRect, rect2: DOMRect): number {
   const xOverlap = Math.max(
     0,
@@ -67,24 +77,24 @@ function calculateOverlapArea(rect1: DOMRect, rect2: DOMRect): number {
   return xOverlap * yOverlap;
 }
 
-function findMaxOverlapRectIndex(inputRect: DOMRect, rects: DOMRect[]): number {
-  let maxOverlapArea = 0;
-  let maxOverlapIndex = -1;
+function findMaxOverlapRectIndexes(
+  inputRect: DOMRect,
+  rects: DOMRect[]
+): number[] {
+  const overlaps = rects
+    .map((rect, index) => {
+      const overlapArea = calculateOverlapArea(inputRect, rect);
+      return { index, overlapArea };
+    })
+    .filter((overlap) => overlap.overlapArea > 0)
+    .sort((a, b) => b.overlapArea - a.overlapArea);
 
-  rects.forEach((rect, index) => {
-    const overlapArea = calculateOverlapArea(inputRect, rect);
-    if (overlapArea > maxOverlapArea) {
-      maxOverlapArea = overlapArea;
-      maxOverlapIndex = index;
-    }
-  });
-
-  return maxOverlapIndex;
+  return overlaps.map((overlap) => overlap.index);
 }
 
 function mergeDOMRects(rects: DOMRect[]): DOMRect {
   if (rects.length === 0) {
-    return new DOMRect(-1, -1, 0, 0);
+    return new DOMRect(-999, -999, 0, 0);
   }
 
   let minX = rects[0].x;

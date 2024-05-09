@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, createEffect } from "solid-js";
 import clsx from "clsx";
 import range from "lodash/range";
 
@@ -8,16 +8,22 @@ import * as store from "@/stores/game";
 import css from "./styles.module.css";
 
 export function Table() {
+  createEffect(() => {
+    if (store.isGameFinished()) {
+      alert("Ta daaaaaaam!");
+    }
+  });
+
   return (
     <div
       class={clsx(css.table, css["table-grid"])}
       style={{
-        "--slots": store.game.slots,
+        "--slots": store.getSlotsCount(),
       }}
       draggable="false"
     >
-      <For each={range(store.game.slots)}>
-        {(i) => <CardPlaceholder column={i + 1} />}
+      <For each={store.game.slots}>
+        {(slot, i) => <CardPlaceholder gridColumn={i() + 1} id={slot.id} />}
       </For>
 
       <For each={store.game.table}>

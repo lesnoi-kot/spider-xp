@@ -1,23 +1,32 @@
+import { splitProps, type ComponentProps } from "solid-js";
 import clsx from "clsx";
 
 import css from "./styles.module.css";
+import { CardSlot } from "@/models";
 
-export function CardPlaceholder({ column }: { column: number }) {
+export function BaseCard(props: ComponentProps<"div">) {
+  const [local, rest] = splitProps(props, ["class"]);
   return (
-    <div
-      class={clsx(css["card-shape"], css["card"], css["card-placeholder"])}
+    <div class={clsx(css["card-shape"], css["card"], local.class)} {...rest} />
+  );
+}
+
+export function CardPlaceholder({
+  id,
+  gridColumn,
+}: { gridColumn: number } & CardSlot) {
+  return (
+    <BaseCard
+      id={id}
+      class={css["card-placeholder"]}
       style={{
-        "grid-row": `1`,
-        "grid-column": `${column}`,
+        "grid-row": 1,
+        "grid-column": gridColumn,
       }}
     />
   );
 }
 
-type HiddenCardProps = {};
-
-export function HiddenCard({}: HiddenCardProps) {
-  return (
-    <div class={clsx(css["card-shape"], css["card"], css["card-hidden"])} />
-  );
+export function HiddenCard() {
+  return <BaseCard class={css["card-hidden"]} />;
 }

@@ -3,28 +3,30 @@ import { createStore, produce } from "solid-js/store";
 import range from "lodash/range";
 import shuffle from "lodash/shuffle";
 
-import { Card, SUITS, TableCard, cardsStackable, getDeck } from "@/models";
+import {
+  Card,
+  CardSlot,
+  SUITS,
+  SUIT_SIZE,
+  TableCard,
+  allRevealed,
+  cardsSorted,
+  cardsStackable,
+  getDeck,
+} from "@/models";
 
 export type GameConfig = {
   slots: 10;
   suitCount: 1 | 2 | 4; // easy, medium, hard
-  totalDecks: 8;
+  totalDecks: number;
 };
 
 export type GameState = {
-  readonly slots: number;
+  readonly slots: CardSlot[];
   deck: Card[];
   table: TableCard[][];
   removed: Card[];
 };
-
-export const [game, setGame] = createStore(
-  newGameState({
-    slots: 10,
-    suitCount: 1,
-    totalDecks: 8,
-  })
-);
 
 export function newGameState({
   slots,
@@ -38,9 +40,9 @@ export function newGameState({
     )
   );
   const initialCards = allCards.slice(0, INITIAL_CARDS_COUNT).map(
-    (card, i): TableCard => ({
+    (card, i, currCards): TableCard => ({
       id: nanoid(),
-      hidden: i < INITIAL_CARDS_COUNT - slots,
+      hidden: currCards.length - i > slots,
       row: Math.floor(i / slots),
       column: i % slots,
       ...card,
@@ -49,7 +51,7 @@ export function newGameState({
   const hiddenCards = allCards.slice(INITIAL_CARDS_COUNT);
 
   return {
-    slots,
+    slots: range(slots).map(() => ({ id: nanoid() })),
     deck: hiddenCards,
     table: range(slots).map((column) =>
       initialCards.filter((card) => card.column === column)
@@ -58,8 +60,40 @@ export function newGameState({
   };
 }
 
-export function revealTopCards(game: GameState): GameState {
-  return game;
+export const NULL_GAME = newGameState({
+  slots: 10,
+  suitCount: 1,
+  totalDecks: 0,
+});
+
+export const [game, setGame] = createStore(
+  newGameState({
+    slots: 10,
+    suitCount: 1,
+    totalDecks: 1,
+  })
+);
+
+export function startNewGame(level: "easy" | "medium" | "hard") {
+  setGame(
+    newGameState({
+      slots: 10,
+      suitCount: level === "easy" ? 1 : level === "medium" ? 2 : 4,
+      totalDecks: 8,
+    })
+  );
+}
+
+export function revealTopCards() {
+  setGame(
+    produce((game) => {
+      game.table.forEach((stack) => {
+        if (stack.length > 0) {
+          stack[stack.length - 1].hidden = false;
+        }
+      });
+    })
+  );
 }
 
 export function getCardsAfterCard(card: TableCard): TableCard[] {
@@ -67,19 +101,19 @@ export function getCardsAfterCard(card: TableCard): TableCard[] {
   return cards;
 }
 
-export function moveCards(cards: TableCard[], toColumn: number) {
+export function moveCards(cards: TableCard[], toColumn: number): boolean {
   if (cards.length === 0) {
-    return;
+    throw new Error("Can't move zero cards");
   }
 
-  if (toColumn < 0 || toColumn >= game.slots) {
+  if (toColumn < 0 || toColumn >= game.slots.length) {
     throw new Error("Invalid column");
   }
 
   const fromColumn = cards[0].column;
 
   if (fromColumn === toColumn) {
-    return;
+    return false;
   }
 
   const lastCardOfTargetColumn = game.table[toColumn].at(-1);
@@ -88,7 +122,7 @@ export function moveCards(cards: TableCard[], toColumn: number) {
     lastCardOfTargetColumn &&
     !cardsStackable(cards[0], lastCardOfTargetColumn)
   ) {
-    return;
+    return false;
   }
 
   setGame(
@@ -106,13 +140,16 @@ export function moveCards(cards: TableCard[], toColumn: number) {
       });
     })
   );
+  checkCardsGathered();
+
+  return true;
 }
 
 export function dealCards() {
   setGame(
     produce((game) => {
-      const dealtCards = game.deck.slice(0, game.slots);
-      game.deck = game.deck.slice(game.slots);
+      const dealtCards = game.deck.slice(0, game.slots.length);
+      game.deck = game.deck.slice(game.slots.length);
 
       dealtCards.forEach((card, i) => {
         game.table[i].push({
@@ -127,6 +164,33 @@ export function dealCards() {
   );
 }
 
+export function checkCardsGathered() {
+  setGame(
+    produce((game) => {
+      game.table.forEach((stack, column) => {
+        const cards = stack.slice(-SUIT_SIZE);
+        if (
+          cards.length === SUIT_SIZE &&
+          allRevealed(cards) &&
+          cardsSorted(cards)
+        ) {
+          game.table[column].splice(-SUIT_SIZE);
+        }
+      });
+    })
+  );
+}
+
+export function isGameFinished() {
+  return (
+    game.table.every((stack) => stack.length === 0) && game.deck.length === 0
+  );
+}
+
+export function getSlotsCount(): number {
+  return game.slots.length;
+}
+
 export function getHiddenDecksCount(): number {
-  return Math.floor(game.deck.length / game.slots);
+  return Math.floor(game.deck.length / getSlotsCount());
 }

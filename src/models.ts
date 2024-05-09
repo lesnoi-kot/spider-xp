@@ -31,18 +31,22 @@ export type TableCard = Card & {
   hidden: boolean;
 };
 
+export type CardSlot = {
+  id: string;
+};
+
 export function getDeck(suit: Suit): Card[] {
   return RANKS.map((rank) => ({ suit, rank }));
 }
 
-export function cardsStackable(from: TableCard, to: TableCard): boolean {
+export function cardsStackable(from: Card, to: Card): boolean {
   return (
     from.suit === to.suit &&
     RANKS.indexOf(to.rank) - RANKS.indexOf(from.rank) === 1
   );
 }
 
-export function areCardsSorted(cards: TableCard[]): boolean {
+export function cardsSorted(cards: Card[]): boolean {
   if (cards.length === 0) {
     return false;
   }
@@ -57,4 +61,8 @@ export function areCardsSorted(cards: TableCard[]): boolean {
   }
 
   return true;
+}
+
+export function allRevealed(cards: TableCard[]) {
+  return cards.every((card) => !card.hidden);
 }
