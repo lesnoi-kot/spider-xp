@@ -3,6 +3,7 @@ import clsx from "clsx";
 import range from "lodash/range";
 
 import { TableCard, CardPlaceholder, HiddenCard } from "@/components/cards";
+import { ScoreBoard } from "@/components/ScoreBoard";
 import * as store from "@/stores/game";
 
 import css from "./styles.module.css";
@@ -26,17 +27,15 @@ export function Table() {
         {(slot, i) => <CardPlaceholder gridColumn={i() + 1} id={slot.id} />}
       </For>
 
-      <For each={store.game.table}>
-        {(cardColumn) => (
-          <For each={cardColumn}>
-            {(card) => {
-              return <TableCard {...card} />;
-            }}
-          </For>
-        )}
-      </For>
+      <div style="grid-row: 3; grid-column: 5 / 7;">
+        <ScoreBoard />
+      </div>
 
       <HiddenCardsStack />
+
+      <For each={store.game.table.flatMap((stack) => stack)}>
+        {(card) => <TableCard {...card} />}
+      </For>
     </div>
   );
 }
@@ -47,7 +46,7 @@ function HiddenCardsStack() {
       {(i) => (
         <div
           class={css["table-hidden-decks-place"]}
-          style={`margin-left: -${i * 9}px;`}
+          style={`margin-left: -${i * 18}px;`}
           onClick={() => {
             store.dealCards();
           }}

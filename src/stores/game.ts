@@ -141,6 +141,7 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
     })
   );
   checkCardsGathered();
+  revealTopCards();
 
   return true;
 }
