@@ -1,21 +1,15 @@
-import { ComponentProps, createMemo, createSignal, mergeProps } from "solid-js";
+import { ComponentProps, createMemo, createSignal } from "solid-js";
 import clsx from "clsx";
 import { clamp } from "lodash";
 
 import { type TableCard, cardsSorted } from "@/models";
-import {
-  NULL_POSITION,
-  dragedCards,
-  mouseData,
-  setDragedCards,
-  setMouseData,
-} from "@/stores/dragdrop";
+import { dragedCards, setDragedCards, setMouseData } from "@/stores/dragdrop";
 import { game, getCardsAfterCard } from "@/stores/game";
 
 import { BaseCard } from "./placeholders";
 import css from "./styles.module.css";
 
-const MAX_STACK_HEIGHT = 330;
+const MAX_STACK_HEIGHT = 400; // 330
 const FULL_STEP = 28;
 const MIN_STEP = 7;
 
@@ -26,14 +20,6 @@ document.addEventListener("mouseup", () => {
 });
 
 export function TableCard(props: TableCard & ComponentProps<"div">) {
-  const position = createMemo(() => {
-    if (dragedCards().find((card) => card.id === props.id)) {
-      return mouseData();
-    }
-
-    return NULL_POSITION;
-  });
-
   const marginTop = createMemo((): number => {
     const stack = game.table[props.column];
     const stackLen = stack.length;
@@ -58,6 +44,26 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
     return margin;
   });
 
+  const translate = createMemo((): string => {
+    return `${props.translateX ?? 0}px ${props.translateY ?? 0}px`;
+  });
+
+  const isDragged = createMemo((): boolean => {
+    return dragedCards()
+      .map((card) => card.id)
+      .includes(props.id);
+  });
+
+  const zIndex = createMemo((): number => {
+    if (isDragged()) {
+      return 100;
+    }
+    if (props.zIndex) {
+      return props.zIndex;
+    }
+    return 1;
+  });
+
   return (
     <BaseCard
       id={props.id}
@@ -67,13 +73,13 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
         props.hidden && css["card-hidden"]
       )}
       style={{
-        "margin-top": `${
-          pressedCard() == props.id ? marginTop() : marginTop()
-        }px`,
+        "margin-top": `${marginTop()}px`,
         "grid-row": "1",
         "grid-column": `${props.column + 1}`,
-        translate: `${position().X}px ${position().Y}px`,
-        "z-index": position() === NULL_POSITION ? undefined : "10",
+        translate: translate(),
+        transition: props.transition,
+        "z-index": zIndex(),
+        visibility: props.visible === false ? "hidden" : "visible",
       }}
       draggable="false"
       onMouseDown={(event) => {

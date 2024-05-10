@@ -28,7 +28,13 @@ export type TableCard = Card & {
   id: string;
   row: number;
   column: number;
-  hidden: boolean;
+  hidden: boolean; // Show the "spider" backside
+
+  transition?: string;
+  translateX?: number;
+  translateY?: number;
+  visible?: boolean;
+  zIndex?: number;
 };
 
 export type CardSlot = {

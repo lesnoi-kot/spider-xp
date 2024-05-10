@@ -1,26 +1,36 @@
 import { createSignal } from "solid-js";
+import { produce } from "solid-js/store";
 
 import type { TableCard } from "@/models";
 
-import { game, moveCards } from "./game";
+import { game, moveCards, setGame } from "./game";
 
 export const NULL_POSITION = { X: 0, Y: 0, originX: 0, originY: 0 };
+export type PositionData = typeof NULL_POSITION;
 
 export const [dragedCards, setDragedCards] = createSignal<TableCard[]>([]);
 export const [mouseData, setMouseData] =
-  createSignal<typeof NULL_POSITION>(NULL_POSITION);
+  createSignal<PositionData>(NULL_POSITION);
 
 document.addEventListener("mousemove", (event) => {
-  if (dragedCards().length === 0) {
+  const handCards = dragedCards();
+  if (handCards.length === 0) {
     return;
   }
 
-  setMouseData(({ originX, originY }) => ({
-    originX,
-    originY,
-    X: event.clientX - originX,
-    Y: event.clientY - originY,
-  }));
+  const X = event.clientX - mouseData().originX;
+  const Y = event.clientY - mouseData().originY;
+
+  setGame(
+    produce((game) => {
+      handCards.forEach((card) => {
+        Object.assign(game.table[card.column][card.row], {
+          translateX: X,
+          translateY: Y,
+        });
+      });
+    })
+  );
 });
 
 document.addEventListener("mouseup", () => {
@@ -54,6 +64,17 @@ document.addEventListener("mouseup", () => {
 
   setDragedCards([]);
   setMouseData(NULL_POSITION);
+
+  setGame(
+    produce((game) => {
+      handCards.forEach((card) => {
+        Object.assign(game.table[card.column][card.row], {
+          translateX: 0,
+          translateY: 0,
+        });
+      });
+    })
+  );
 
   for (const targetColumn of targetColumns) {
     if (moveCards(handCards, targetColumn)) {

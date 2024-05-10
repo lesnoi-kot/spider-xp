@@ -70,7 +70,7 @@ export const [game, setGame] = createStore(
   newGameState({
     slots: 10,
     suitCount: 1,
-    totalDecks: 1,
+    totalDecks: 8,
   })
 );
 
@@ -146,24 +146,34 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
   return true;
 }
 
-export function dealCards() {
+export function dealCards(extra?: Partial<TableCard>): TableCard[] {
+  let result: TableCard[] = [];
+
   setGame(
     produce((game) => {
       const dealtCards = game.deck.slice(0, game.slots.length);
       game.deck = game.deck.slice(game.slots.length);
 
-      dealtCards.forEach((card, i) => {
-        game.table[i].push({
+      result = dealtCards.map((card, column) => {
+        const tableCard: TableCard = {
           id: nanoid(),
           hidden: false,
-          row: game.table[i].length,
-          column: i,
+          row: game.table[column].length,
+          column: column,
+          ...extra,
           ...card,
-        });
+        };
+
+        game.table[column].push(tableCard);
+        return tableCard;
       });
     })
   );
+
+  return result;
 }
+
+// export function takeFromDeck(): Card[] {}
 
 export function checkCardsGathered() {
   setGame(
@@ -194,4 +204,16 @@ export function getSlotsCount(): number {
 
 export function getHiddenDecksCount(): number {
   return Math.floor(game.deck.length / getSlotsCount());
+}
+
+export function modifyCard(id: string, input: Partial<TableCard>) {
+  setGame(
+    produce((game) => {
+      const card = game.table.flatMap((x) => x).find((card) => card.id === id);
+
+      if (card) {
+        Object.assign(card, input);
+      }
+    })
+  );
 }
