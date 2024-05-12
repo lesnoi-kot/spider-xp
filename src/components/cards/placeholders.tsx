@@ -30,3 +30,7 @@ export function CardPlaceholder({
 export function HiddenCard() {
   return <BaseCard class={css["card-hidden"]} />;
 }
+
+export function RemovedCard() {
+  return <BaseCard class={clsx(css["card-spades"], css["card-K"])} />;
+}

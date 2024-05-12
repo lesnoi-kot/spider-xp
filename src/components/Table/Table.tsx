@@ -1,4 +1,4 @@
-import { For, createEffect } from "solid-js";
+import { For } from "solid-js";
 import clsx from "clsx";
 import range from "lodash/range";
 
@@ -7,19 +7,15 @@ import {
   CardPlaceholder,
   HiddenCard,
   animateCardDeal,
+  RemovedCard,
 } from "@/components/cards";
 import { ScoreBoard } from "@/components/ScoreBoard";
 import * as store from "@/stores/game";
+import { loopedDealSound } from "@/sfx";
 
 import css from "./styles.module.css";
 
 export function Table() {
-  createEffect(() => {
-    if (store.isGameFinished()) {
-      alert("Ta daaaaaaam!");
-    }
-  });
-
   return (
     <div
       class={clsx(css.table, css["table-grid"])}
@@ -37,6 +33,7 @@ export function Table() {
       </div>
 
       <HiddenCardsStack />
+      <RemovedCardsStack />
 
       <For each={store.game.table.flatMap((stack) => stack)}>
         {(card) => <TableCard {...card} />}
@@ -52,22 +49,27 @@ function HiddenCardsStack() {
     <For each={range(store.getHiddenDecksCount())}>
       {(i) => (
         <div
+          role="button"
           id={i === store.getHiddenDecksCount() - 1 ? "deck" : undefined}
           class={css["table-hidden-decks-place"]}
-          style={`margin-left: -${i * 18}px;`}
-          onClick={async (event) => {
+          style={`margin-left: -${i * 18}px; cursor: pointer;`}
+          onClick={() => {
             if (clickBlocked) {
               return;
             }
             clickBlocked = true;
 
-            const deckPlaceBox = event.target.getBoundingClientRect();
+            const deckPlaceBox = document
+              .getElementById("deck")!
+              .getBoundingClientRect();
             const newCardsOnTable = store.dealCards({ visible: false });
+            loopedDealSound(store.getSlotsCount());
 
-            await Promise.allSettled(
+            Promise.allSettled(
               newCardsOnTable.map((card) => animateCardDeal(card, deckPlaceBox))
-            );
-            clickBlocked = false;
+            ).then(() => {
+              clickBlocked = false;
+            });
           }}
         >
           <HiddenCard />
@@ -79,13 +81,18 @@ function HiddenCardsStack() {
 
 function RemovedCardsStack() {
   return (
-    <For each={range(store.getHiddenDecksCount())}>
+    <For each={range(store.getRemovedDecksCount() + 1)}>
       {(i) => (
         <div
-          // class={css["table-hidden-decks-place"]}
-          style={`margin-left: ${i * 18}px;`}
+          id={i === store.getRemovedDecksCount() ? "trash" : undefined}
+          style={{
+            "margin-right": `-${i * 24}px`,
+            visibility:
+              i === store.getRemovedDecksCount() ? "hidden" : undefined,
+          }}
+          class={css["table-removed-decks-place"]}
         >
-          <HiddenCard />
+          <RemovedCard />
         </div>
       )}
     </For>

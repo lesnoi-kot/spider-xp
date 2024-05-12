@@ -1,3 +1,3 @@
-export { CardPlaceholder, HiddenCard } from "./placeholders";
-export { TableCard } from "./TableCard";
+export * from "./placeholders";
+export * from "./TableCard";
 export * from "./animations";

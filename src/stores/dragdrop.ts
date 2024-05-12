@@ -1,16 +1,36 @@
-import { createSignal } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
 import { produce } from "solid-js/store";
 
 import type { TableCard } from "@/models";
+import { moveAudio } from "@/sfx";
 
 import { game, moveCards, setGame } from "./game";
 
-export const NULL_POSITION = { X: 0, Y: 0, originX: 0, originY: 0 };
+export const NULL_POSITION = { originX: 0, originY: 0 };
 export type PositionData = typeof NULL_POSITION;
 
 export const [dragedCards, setDragedCards] = createSignal<TableCard[]>([]);
 export const [mouseData, setMouseData] =
   createSignal<PositionData>(NULL_POSITION);
+
+createEffect(() => {
+  const handCards = dragedCards();
+  if (handCards.length === 0) {
+    return;
+  }
+
+  // Shift cards on click
+  setGame(
+    produce((game) => {
+      handCards.forEach((card) => {
+        Object.assign(game.table[card.column][card.row], {
+          translateX: -1,
+          translateY: -1,
+        });
+      });
+    })
+  );
+});
 
 document.addEventListener("mousemove", (event) => {
   const handCards = dragedCards();
@@ -71,6 +91,7 @@ document.addEventListener("mouseup", () => {
         Object.assign(game.table[card.column][card.row], {
           translateX: 0,
           translateY: 0,
+          // transition: "translate 150ms",
         });
       });
     })
@@ -78,6 +99,7 @@ document.addEventListener("mouseup", () => {
 
   for (const targetColumn of targetColumns) {
     if (moveCards(handCards, targetColumn)) {
+      moveAudio.play();
       break;
     }
   }

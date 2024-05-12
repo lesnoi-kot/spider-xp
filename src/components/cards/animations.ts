@@ -13,7 +13,7 @@ export async function animateCardDeal(card: TableCard, from: DOMRect) {
     zIndex: getSlotsCount() - card.column,
   });
 
-  await sleep(100 * card.column);
+  await sleep(120 * card.column);
   modifyCard(card.id, {
     translateX: 0,
     translateY: 0,

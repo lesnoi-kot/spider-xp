@@ -4,7 +4,8 @@ import { clamp } from "lodash";
 
 import { type TableCard, cardsSorted } from "@/models";
 import { dragedCards, setDragedCards, setMouseData } from "@/stores/dragdrop";
-import { game, getCardsAfterCard } from "@/stores/game";
+import { game, getCardsAfterCard, modifyCard } from "@/stores/game";
+import { selectAudio } from "@/sfx";
 
 import { BaseCard } from "./placeholders";
 import css from "./styles.module.css";
@@ -66,6 +67,7 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
 
   return (
     <BaseCard
+      role="button"
       id={props.id}
       class={clsx(
         css[`card-${props.suit}`],
@@ -92,14 +94,17 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
         if (cardsSorted(handCards)) {
           setDragedCards(handCards);
           setMouseData({
-            X: -1,
-            Y: -1,
             originX: event.clientX,
             originY: event.clientY,
           });
+          selectAudio.play();
         } else {
           setPressedCard(props.id);
         }
+      }}
+      onTransitionEnd={() => {
+        // Make managing animations a little bit simpler
+        modifyCard(props.id, { transition: undefined });
       }}
     />
   );

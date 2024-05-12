@@ -7,7 +7,6 @@
   display: grid;
   height: 550px;
   width: 880px;
-  margin: 0 auto;
   padding-top: 10px;
   justify-items: center;
 
@@ -31,4 +30,9 @@
 
 .table-hidden-stack > div {
   position: relative;
+}
+
+.table-removed-decks-place {
+  grid-row: 3;
+  grid-column: 1;
 }

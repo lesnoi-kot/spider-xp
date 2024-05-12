@@ -14,6 +14,8 @@ import {
   cardsStackable,
   getDeck,
 } from "@/models";
+import { sleep } from "@/utils";
+import { loopedDealSound } from "@/sfx";
 
 export type GameConfig = {
   slots: 10;
@@ -26,6 +28,8 @@ export type GameState = {
   deck: Card[];
   table: TableCard[][];
   removed: Card[];
+  score: number;
+  moves: number;
 };
 
 export function newGameState({
@@ -33,16 +37,16 @@ export function newGameState({
   suitCount,
   totalDecks,
 }: GameConfig): GameState {
-  const INITIAL_CARDS_COUNT = 54;
+  const INITIAL_CARDS_COUNT = 54 - slots;
   const allCards = shuffle(
     range(totalDecks / suitCount).flatMap(() =>
       SUITS.slice(0, suitCount).flatMap(getDeck)
     )
   );
   const initialCards = allCards.slice(0, INITIAL_CARDS_COUNT).map(
-    (card, i, currCards): TableCard => ({
+    (card, i): TableCard => ({
       id: nanoid(),
-      hidden: currCards.length - i > slots,
+      hidden: true,
       row: Math.floor(i / slots),
       column: i % slots,
       ...card,
@@ -57,6 +61,8 @@ export function newGameState({
       initialCards.filter((card) => card.column === column)
     ),
     removed: [],
+    score: 0,
+    moves: 0,
   };
 }
 
@@ -66,15 +72,9 @@ export const NULL_GAME = newGameState({
   totalDecks: 0,
 });
 
-export const [game, setGame] = createStore(
-  newGameState({
-    slots: 10,
-    suitCount: 1,
-    totalDecks: 8,
-  })
-);
+export const [game, setGame] = createStore(NULL_GAME);
 
-export function startNewGame(level: "easy" | "medium" | "hard") {
+export function startNewGame(level: "easy" | "medium" | "difficult") {
   setGame(
     newGameState({
       slots: 10,
@@ -127,21 +127,21 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
 
   setGame(
     produce((game) => {
-      game.table[fromColumn] = game.table[fromColumn].slice(0, -cards.length);
+      const removedCards = game.table[fromColumn].splice(-cards.length);
       if (game.table[fromColumn].length > 0) {
         game.table[fromColumn][game.table[fromColumn].length - 1].hidden =
           false;
       }
 
-      game.table[toColumn].push(...cards);
+      game.table[toColumn].push(...removedCards);
       game.table[toColumn].forEach((card, row) => {
         card.column = toColumn;
         card.row = row;
       });
+      game.moves += 1;
     })
   );
   checkCardsGathered();
-  revealTopCards();
 
   return true;
 }
@@ -173,28 +173,45 @@ export function dealCards(extra?: Partial<TableCard>): TableCard[] {
   return result;
 }
 
-// export function takeFromDeck(): Card[] {}
-
 export function checkCardsGathered() {
-  setGame(
-    produce((game) => {
-      game.table.forEach((stack, column) => {
-        const cards = stack.slice(-SUIT_SIZE);
-        if (
-          cards.length === SUIT_SIZE &&
-          allRevealed(cards) &&
-          cardsSorted(cards)
-        ) {
-          game.table[column].splice(-SUIT_SIZE);
-        }
+  game.table.forEach((stack, column) => {
+    const cards = stack.slice(-SUIT_SIZE);
+    if (
+      cards.length === SUIT_SIZE &&
+      allRevealed(cards) &&
+      cardsSorted(cards)
+    ) {
+      const to = document.getElementById("trash")!.getBoundingClientRect();
+
+      loopedDealSound(getSlotsCount());
+      Promise.all(
+        cards.map((card, i, arr) =>
+          animateCardRemoval(card, arr.length - i - 1, to).then(() => {
+            setGame(
+              produce((game) => {
+                game.score += 100;
+              })
+            );
+          })
+        )
+      ).then(() => {
+        setGame(
+          produce((game) => {
+            const removedCards = game.table[column].splice(-SUIT_SIZE);
+            game.removed.push(...removedCards);
+          })
+        );
+        revealTopCards();
       });
-    })
-  );
+    }
+  });
 }
 
-export function isGameFinished() {
+export function isGameOver() {
   return (
-    game.table.every((stack) => stack.length === 0) && game.deck.length === 0
+    game.removed.length !== 0 &&
+    game.table.every((stack) => stack.length === 0) &&
+    game.deck.length === 0
   );
 }
 
@@ -204,6 +221,10 @@ export function getSlotsCount(): number {
 
 export function getHiddenDecksCount(): number {
   return Math.floor(game.deck.length / getSlotsCount());
+}
+
+export function getRemovedDecksCount(): number {
+  return Math.floor(game.removed.length / SUIT_SIZE);
 }
 
 export function modifyCard(id: string, input: Partial<TableCard>) {
@@ -216,4 +237,27 @@ export function modifyCard(id: string, input: Partial<TableCard>) {
       }
     })
   );
+}
+
+export async function animateCardRemoval(
+  card: TableCard,
+  order: number,
+  to: DOMRect
+) {
+  const FLY_DURATION = 200;
+  const cardBox = document.getElementById(card.id)!.getBoundingClientRect();
+  modifyCard(card.id, {
+    translateX: 0,
+    translateY: 0,
+    transition: undefined,
+  });
+
+  await sleep(100 * order);
+  modifyCard(card.id, {
+    translateX: to.x - cardBox.x,
+    translateY: to.y - cardBox.y,
+    transition: `translate ${FLY_DURATION}ms`,
+    zIndex: 10 + order,
+  });
+  await sleep(FLY_DURATION);
 }
