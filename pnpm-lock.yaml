@@ -20,6 +20,9 @@ dependencies:
   solid-js:
     specifier: ^1.8.15
     version: 1.8.17
+  xp.css:
+    specifier: ^0.2.6
+    version: 0.2.6
 
 devDependencies:
   typescript:
@@ -1091,6 +1094,10 @@ packages:
     dependencies:
       vite: 5.2.11
     dev: true
+
+  /xp.css@0.2.6:
+    resolution: {integrity: sha512-v0qUB4wOvyXIMLNid5bIpm+0n5aL4i8wE5dqJH8LNVxE04PxUUxjwf2rNzengegUIK03XC4vbfLVCPAfMLtuqA==}
+    dev: false
 
   /yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}

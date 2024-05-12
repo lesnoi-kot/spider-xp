@@ -1,0 +1,6 @@
+.game {
+  margin: 0 auto;
+
+  --dialog-zIndex: 200;
+  --table-zIndex: unset;
+}

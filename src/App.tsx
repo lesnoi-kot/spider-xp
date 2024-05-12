@@ -1,11 +1,5 @@
-import { Table } from "./components/Table/Table";
+import { Game } from "./components/Game";
 
-function App() {
-  return (
-    <>
-      <Table />
-    </>
-  );
+export function App() {
+  return <Game />;
 }
-
-export default App;
