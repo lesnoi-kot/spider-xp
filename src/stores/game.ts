@@ -51,7 +51,7 @@ export function newGameState({
   const initialCards = take(allCards, INITIAL_CARDS_COUNT).map(
     (card, i): TableCard => ({
       id: nanoid(),
-      hidden: false,
+      hidden: true,
       row: Math.floor(i / slots),
       column: i % slots,
       ...card,

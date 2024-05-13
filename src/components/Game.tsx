@@ -72,7 +72,9 @@ export function Game() {
         </button>
       </div>
 
+      {/* @ts-ignore */}
       <DifficultyDialog ref={difficultyDialog} />
+      {/* @ts-ignore */}
       <AboutDialog ref={aboutDialog} />
 
       <Show when={isGameOver()}>
