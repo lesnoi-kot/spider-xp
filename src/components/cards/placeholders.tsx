@@ -1,13 +1,14 @@
 import { splitProps, type ComponentProps } from "solid-js";
 import clsx from "clsx";
 
+import { Card as CardModel, CardSlot } from "@/models";
+
 import css from "./styles.module.css";
-import { CardSlot } from "@/models";
 
 export function BaseCard(props: ComponentProps<"div">) {
   const [local, rest] = splitProps(props, ["class"]);
   return (
-    <div class={clsx(css["card-shape"], css["card"], local.class)} {...rest} />
+    <div {...rest} class={clsx(css["card-shape"], css["card"], local.class)} />
   );
 }
 
@@ -31,6 +32,16 @@ export function HiddenCard() {
   return <BaseCard class={css["card-hidden"]} />;
 }
 
-export function RemovedCard() {
-  return <BaseCard class={clsx(css["card-spades"], css["card-K"])} />;
+export function Card(props: ComponentProps<typeof BaseCard> & CardModel) {
+  const [local, rest] = splitProps(props, ["class"]);
+  return (
+    <BaseCard
+      {...rest}
+      class={clsx(
+        css[`card-${props.suit}`],
+        css[`card-${props.rank}`],
+        local.class
+      )}
+    />
+  );
 }

@@ -1,8 +1,8 @@
-import { Dialog } from "./Dialog";
+import { Dialog, DialogProps } from "./Dialog";
 
-export function AboutDialog({ id }: { id?: string }) {
+export function AboutDialog(props: Omit<DialogProps, "title">) {
   return (
-    <Dialog title="About Spider" id={id}>
+    <Dialog {...props} title="About Spider">
       <img src="/splash.png" />
 
       <form style="text-align: center; margin-top: 1em;" method="dialog">

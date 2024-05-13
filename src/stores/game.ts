@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { createStore, produce } from "solid-js/store";
 import range from "lodash/range";
 import shuffle from "lodash/shuffle";
+import { take } from "lodash";
 
 import {
   Card,
@@ -25,9 +26,9 @@ export type GameConfig = {
 
 export type GameState = {
   readonly slots: CardSlot[];
-  deck: Card[];
-  table: TableCard[][];
-  removed: Card[];
+  deck: Card[]; // Shuffled cards list to take from
+  table: TableCard[][]; // Cards of each column
+  removed: Card[]; // King cards of removed decks
   score: number;
   moves: number;
 };
@@ -37,26 +38,28 @@ export function newGameState({
   suitCount,
   totalDecks,
 }: GameConfig): GameState {
-  const INITIAL_CARDS_COUNT = 54 - slots;
   const allCards = shuffle(
     range(totalDecks / suitCount).flatMap(() =>
       SUITS.slice(0, suitCount).flatMap(getDeck)
     )
   );
-  const initialCards = allCards.slice(0, INITIAL_CARDS_COUNT).map(
+
+  // Number of hidden cards on the table at the start
+  const INITIAL_CARDS_COUNT = 54 - slots;
+
+  const initialCards = take(allCards, INITIAL_CARDS_COUNT).map(
     (card, i): TableCard => ({
       id: nanoid(),
-      hidden: true,
+      hidden: false,
       row: Math.floor(i / slots),
       column: i % slots,
       ...card,
     })
   );
-  const hiddenCards = allCards.slice(INITIAL_CARDS_COUNT);
 
   return {
     slots: range(slots).map(() => ({ id: nanoid() })),
-    deck: hiddenCards,
+    deck: allCards.slice(INITIAL_CARDS_COUNT),
     table: range(slots).map((column) =>
       initialCards.filter((card) => card.column === column)
     ),
@@ -197,8 +200,8 @@ export function checkCardsGathered() {
       ).then(() => {
         setGame(
           produce((game) => {
-            const removedCards = game.table[column].splice(-SUIT_SIZE);
-            game.removed.push(...removedCards);
+            const [onOfRemovedCards] = game.table[column].splice(-SUIT_SIZE);
+            game.removed.push(onOfRemovedCards);
           })
         );
         revealTopCards();
@@ -224,7 +227,7 @@ export function getHiddenDecksCount(): number {
 }
 
 export function getRemovedDecksCount(): number {
-  return Math.floor(game.removed.length / SUIT_SIZE);
+  return game.removed.length;
 }
 
 export function modifyCard(id: string, input: Partial<TableCard>) {

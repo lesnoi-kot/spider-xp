@@ -7,7 +7,7 @@ import {
   CardPlaceholder,
   HiddenCard,
   animateCardDeal,
-  RemovedCard,
+  Card,
 } from "@/components/cards";
 import { ScoreBoard } from "@/components/ScoreBoard";
 import * as store from "@/stores/game";
@@ -81,20 +81,27 @@ function HiddenCardsStack() {
 
 function RemovedCardsStack() {
   return (
-    <For each={range(store.getRemovedDecksCount() + 1)}>
-      {(i) => (
-        <div
-          id={i === store.getRemovedDecksCount() ? "trash" : undefined}
-          style={{
-            "margin-right": `-${i * 24}px`,
-            visibility:
-              i === store.getRemovedDecksCount() ? "hidden" : undefined,
-          }}
-          class={css["table-removed-decks-place"]}
-        >
-          <RemovedCard />
-        </div>
-      )}
-    </For>
+    <>
+      <For each={store.game.removed}>
+        {(card, i) => (
+          <div
+            style={{ "margin-right": `-${i() * 24}px` }}
+            class={css["table-removed-decks-place"]}
+          >
+            <Card {...card} />
+          </div>
+        )}
+      </For>
+      <div
+        id="trash"
+        style={{
+          "margin-right": `-${store.getRemovedDecksCount() * 24}px`,
+          visibility: "hidden",
+        }}
+        class={css["table-removed-decks-place"]}
+      >
+        <Card suit="spades" rank="K" />
+      </div>
+    </>
   );
 }

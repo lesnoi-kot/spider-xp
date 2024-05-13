@@ -9,24 +9,19 @@ import { Congrats } from "./Congrats/Congrats";
 
 import css from "./styles.module.css";
 
-const DIFFICULTY_DIALOG_ID = "difficulty-dialog";
-const ABOUT_DIALOG_ID = "about-dialog";
-
 export function Game() {
-  let difficultyDialog: HTMLDialogElement, aboutDialog: HTMLDialogElement;
+  let difficultyDialog: HTMLDialogElement,
+    aboutDialog: HTMLDialogElement,
+    gameOverDialog: HTMLDialogElement;
 
   createEffect(() => {
     if (isGameOver()) {
       winAudio.play();
+      gameOverDialog.show();
     }
   });
 
   onMount(() => {
-    difficultyDialog = document.getElementById(
-      DIFFICULTY_DIALOG_ID
-    ) as HTMLDialogElement;
-    aboutDialog = document.getElementById(ABOUT_DIALOG_ID) as HTMLDialogElement;
-
     difficultyDialog.addEventListener("close", () => {
       const dialogResult = difficultyDialog.returnValue;
 
@@ -44,6 +39,7 @@ export function Game() {
           return;
       }
 
+      // Deal cards on the start
       setTimeout(() => {
         document.getElementById("deck")?.click();
       }, 50);
@@ -57,27 +53,39 @@ export function Game() {
       class={css["game"]}
       style="position: relative; display: flex; flex-direction: column; width: fit-content; place-content: center;"
     >
-      <div>
+      <div style="background: #f5f6f7;">
         <button
+          style="border: 0; box-shadow: none; background: inherit;"
           onClick={() => {
             difficultyDialog.show();
           }}
         >
-          new game
+          New game
         </button>
         <button
+          style="border: 0; box-shadow: none; background: inherit;"
           onClick={() => {
             aboutDialog.show();
           }}
         >
-          about
+          Help
         </button>
       </div>
-      <DifficultyDialog id={DIFFICULTY_DIALOG_ID} />
-      <AboutDialog id={ABOUT_DIALOG_ID} />
 
-      <Show when={true || isGameOver()}>
-        <Congrats />
+      <DifficultyDialog ref={difficultyDialog} />
+      <AboutDialog ref={aboutDialog} />
+
+      <Show when={isGameOver()}>
+        <Congrats
+          gameOverDialogRef={(ref) => {
+            gameOverDialog = ref;
+            gameOverDialog.addEventListener("close", () => {
+              if (gameOverDialog.returnValue === "yes") {
+                difficultyDialog.show();
+              }
+            });
+          }}
+        />
       </Show>
       <Table />
     </div>

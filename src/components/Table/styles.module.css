@@ -7,7 +7,7 @@
   display: grid;
   height: 550px;
   width: 880px;
-  padding-top: 10px;
+  padding: 10px 0;
   justify-items: center;
 
   --slots: 10;

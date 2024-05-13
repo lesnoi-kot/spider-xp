@@ -1,8 +1,18 @@
-import { Dialog } from "./Dialog";
+import { Dialog, DialogProps } from "./Dialog";
 
-export function DifficultyDialog({ id }: { id: string }) {
+export function DifficultyDialog(props: Omit<DialogProps, "title">) {
+  let dialogRef: HTMLDialogElement;
+
   return (
-    <Dialog id={id} title="Difficulty" width={290}>
+    <Dialog
+      {...props}
+      title="Difficulty"
+      style={{ width: "290px" }}
+      ref={(ref) => {
+        dialogRef = ref;
+        typeof props.ref === "function" && props.ref(ref);
+      }}
+    >
       <form
         style="display: flex; flex-direction: column; gap: 1.25rem;"
         method="dialog"
@@ -47,16 +57,13 @@ export function DifficultyDialog({ id }: { id: string }) {
             type="submit"
             autofocus
             onClick={(event) => {
-              const currDialog = document.getElementById(
-                id
-              ) as HTMLDialogElement;
               const form = event.currentTarget.form;
 
-              if (currDialog && form) {
+              if (form) {
                 const { value } = form.elements.namedItem(
                   "difficulty"
                 ) as RadioNodeList;
-                currDialog.returnValue = value;
+                dialogRef.returnValue = value;
                 event.currentTarget.value = value;
                 event.currentTarget.form?.reset();
               }
