@@ -26,11 +26,12 @@ export type GameConfig = {
 
 export type GameState = {
   readonly slots: CardSlot[];
-  deck: Card[]; // Shuffled cards list to take from
+  deck: Card[]; // Shuffled cards list to take a card from
   table: TableCard[][]; // Cards of each column
   removed: Card[]; // King cards of removed decks
   score: number;
   moves: number;
+  uiFrozen: boolean;
 };
 
 export function newGameState({
@@ -66,6 +67,7 @@ export function newGameState({
     removed: [],
     score: 0,
     moves: 0,
+    uiFrozen: false,
   };
 }
 
@@ -186,6 +188,7 @@ export function checkCardsGathered() {
     ) {
       const to = document.getElementById("trash")!.getBoundingClientRect();
 
+      freezeUI();
       loopedDealSound(getSlotsCount());
       Promise.all(
         cards.map((card, i, arr) =>
@@ -204,6 +207,7 @@ export function checkCardsGathered() {
             game.removed.push(onOfRemovedCards);
           })
         );
+        unfreezeUI();
         revealTopCards();
       });
     }
@@ -228,6 +232,22 @@ export function getHiddenDecksCount(): number {
 
 export function getRemovedDecksCount(): number {
   return game.removed.length;
+}
+
+export function freezeUI() {
+  setGame(
+    produce((game) => {
+      game.uiFrozen = true;
+    })
+  );
+}
+
+export function unfreezeUI() {
+  setGame(
+    produce((game) => {
+      game.uiFrozen = false;
+    })
+  );
 }
 
 export function modifyCard(id: string, input: Partial<TableCard>) {

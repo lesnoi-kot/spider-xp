@@ -20,7 +20,10 @@ export async function animateCardDeal(card: TableCard, from: DOMRect) {
     transition: `translate ${FLY_DURATION}ms`,
   });
   await sleep(FLY_DURATION);
-  modifyCard(card.id, { transition: undefined, zIndex: undefined });
+  modifyCard(card.id, {
+    transition: undefined,
+    zIndex: undefined,
+  });
 }
 
 async function mounted(idSelector: string): Promise<HTMLElement> {
@@ -29,17 +32,4 @@ async function mounted(idSelector: string): Promise<HTMLElement> {
     await sleep(25);
   }
   return el;
-}
-
-async function repaint() {
-  let resolve: (value: unknown) => void;
-
-  const promise = new Promise((res) => {
-    resolve = res;
-  });
-
-  requestAnimationFrame(() => {
-    resolve?.(undefined);
-  });
-  await promise;
 }

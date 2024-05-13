@@ -82,10 +82,11 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
         transition: props.transition,
         "z-index": zIndex(),
         visibility: props.visible === false ? "hidden" : "visible",
+        cursor: game.uiFrozen || props.hidden ? undefined : "pointer",
       }}
       draggable="false"
       onMouseDown={(event) => {
-        if (props.hidden || event.button !== 0) {
+        if (game.uiFrozen || props.hidden || event.button !== 0) {
           return;
         }
 

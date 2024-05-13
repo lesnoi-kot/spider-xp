@@ -62,6 +62,7 @@ function HiddenCardsStack() {
             const deckPlaceBox = document
               .getElementById("deck")!
               .getBoundingClientRect();
+            store.freezeUI();
             const newCardsOnTable = store.dealCards({ visible: false });
             loopedDealSound(store.getSlotsCount());
 
@@ -69,6 +70,7 @@ function HiddenCardsStack() {
               newCardsOnTable.map((card) => animateCardDeal(card, deckPlaceBox))
             ).then(() => {
               clickBlocked = false;
+              store.unfreezeUI();
             });
           }}
         >
