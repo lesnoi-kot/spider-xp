@@ -1,105 +1,199 @@
-import { clamp, random, range, sample } from "lodash";
+import { random, sample } from "lodash";
 import { For, createSignal, onMount } from "solid-js";
 
-type Flame = {
-  cx: number;
-  cy: number;
-  r: number;
-  fill: string;
-
+type Projectile = {
+  x: number;
+  y: number;
+  x2: number;
+  y2: number;
   vx: number;
   vy: number;
-  // d: number;
+  theta: number;
   speed: number;
 };
-type Explosion = Flame[];
 
-const GRAVITY_VY = 0.1;
-const EXPLOSION_DURATION = 1000;
-const FALLOUT_DURATION = 1000;
-const ANIMATION_DURATION = EXPLOSION_DURATION + FALLOUT_DURATION;
+type Particle = {
+  x: number;
+  y: number;
+  r: number;
+  fill: string;
+  vx: number;
+  vy: number;
+  vr: number;
+};
+type Explosion = Particle[];
+
+const SHOOT_DURATION = 1200;
+const EXPLOSION_DURATION = 1700;
+const FALLOUT_DURATION = 3500;
+const ANIMATION_DURATION =
+  SHOOT_DURATION + EXPLOSION_DURATION + FALLOUT_DURATION;
+
 const EXPLOSION_MIN_RADIUS = 20;
-const EXPLOSION_MAX_RADIUS = 60;
-const EXPLOSION_PARTICLE_COUNT = 60;
-const R = 5;
+const EXPLOSION_PARTICLE_COUNT = 70;
+const INITIAL_PARTICLE_RADIUS = 5;
+const PARTICLE_COLORS = ["red", "lime", "purple", "yellow", "blue", "fuchsia"];
 
-function newExplosion(n: number): Explosion {
-  const fill = sample(["red", "green", "purple", "yellow", "blue", "white"]);
-  const initialSpeed = random(4, 5, true);
+const PROJECTILE_START_Y = 370;
+const PROJECTILE_LENGTH = 30;
+const PROJECTILE_DEVIATION = 20;
 
-  return generateNormalizedVectors(n - 20)
-    .map((vector) => {
-      const d = Math.min(0.15 + Math.random(), 1);
-      return {
-        cx: EXPLOSION_MIN_RADIUS * vector.x * d,
-        cy: EXPLOSION_MIN_RADIUS * vector.y * d,
-        r: R,
-        fill,
+function newExplosion(
+  n: number,
+  x: number,
+  y: number,
+  mX: number,
+  mY: number
+): Explosion {
+  const fill = sample(PARTICLE_COLORS)!;
+  const initialSpeed = 0.13;
+
+  return generatePointsInsideCircle(n - 20, EXPLOSION_MIN_RADIUS, x, y)
+    .concat(
+      generateNormalizedVectors(20).map((vector) => ({
+        x: x + EXPLOSION_MIN_RADIUS * vector.x,
+        y: y + EXPLOSION_MIN_RADIUS * vector.y,
         vx: vector.x,
         vy: vector.y,
-        speed: d * initialSpeed,
+      }))
+    )
+    .map((vector) => {
+      return {
+        x: vector.x,
+        y: vector.y,
+        r: INITIAL_PARTICLE_RADIUS,
+        vx: 1 * initialSpeed * vector.vx - mX,
+        vy: 1 * initialSpeed * vector.vy - mY,
+        vr: random(1, 1.5, true) / 1000,
+        fill,
       };
-    })
-    .concat(
-      generateNormalizedVectors(20).map((vector) => {
-        return {
-          cx: EXPLOSION_MIN_RADIUS * vector.x,
-          cy: EXPLOSION_MIN_RADIUS * vector.y,
-          r: R,
-          fill,
-          vx: vector.x,
-          vy: vector.y,
-          speed: initialSpeed,
-        };
-      })
-    );
+    });
 }
 
-function updateExplosion(e: Explosion, t: number): Explosion {
-  const normalizedT = clamp(t / EXPLOSION_DURATION, 0, 1);
-  // const eR =
-  //   EXPLOSION_MIN_RADIUS +
-  //   easeOutQuadratic(1 - normalizedT) *
-  //     (EXPLOSION_MAX_RADIUS - EXPLOSION_MIN_RADIUS);
+function newProjectile(
+  x: number,
+  y: number,
+  targetX: number,
+  targetY: number
+): Projectile {
+  const theta = Math.atan2(y - targetY, x - targetX);
+  const speed = Math.hypot(x, y) / SHOOT_DURATION;
+  const vx = speed * Math.cos(theta);
+  const vy = speed * Math.sin(theta);
+  return {
+    theta,
+    x,
+    y,
+    x2: x + Math.cos(theta) * PROJECTILE_LENGTH,
+    y2: y + Math.sin(theta) * PROJECTILE_LENGTH,
+    vx,
+    vy,
+    speed,
+  };
+}
 
-  return e.map((flame) => ({
-    ...flame,
-    // cx: eR * flame.d * flame.vx,
-    // cy: eR * flame.d * flame.vy,
+function updateExplosion(
+  e: Explosion,
+  currentTime: number,
+  delta: number
+): Explosion {
+  const startedFading = currentTime > EXPLOSION_DURATION + 500;
 
-    cx: flame.cx + flame.speed * flame.vx,
-    cy: flame.cy + flame.speed * flame.vy,
-    speed: easeOutQuadratic(normalizedT) * flame.speed,
-    // r: (1 - normalizedT) * R, // linear(t, R),
-  }));
+  return e
+    .map((particle) => ({
+      ...particle,
+      x: particle.x + particle.vx * delta,
+      y: particle.y + particle.vy * delta,
+      vx: particle.vx * 0.4 ** (delta / 1000),
+      vy: particle.vy * 0.4 ** (delta / 1000) + delta / 35_000,
+      r: startedFading ? particle.r - particle.vr * delta : particle.r,
+    }))
+    .filter((flame) => flame.r >= 1);
+}
+
+function updateProjectile(p: Projectile, delta: number): Projectile {
+  const x = p.x - p.vx * delta;
+  const y = p.y - p.vy * delta;
+
+  return {
+    ...p,
+    x: x,
+    y: y,
+    x2: x + Math.cos(p.theta) * PROJECTILE_LENGTH,
+    y2: y + Math.sin(p.theta) * PROJECTILE_LENGTH,
+  };
 }
 
 export function Firework() {
-  const [flames, setFlames] = createSignal<Explosion>(
-    newExplosion(EXPLOSION_PARTICLE_COUNT)
-  );
+  const [explosions, setExplosions] = createSignal<Explosion[]>([]);
+  const [projectiles, setProjectiles] = createSignal<Projectile[]>([]);
 
   onMount(() => {
     let lastTs: DOMHighResTimeStamp;
     let t = 0;
 
     function draw(ts: DOMHighResTimeStamp) {
-      const delta = (ts - lastTs) / 1000;
-      setFlames((flames) => updateExplosion(flames, t));
+      const delta = ts - lastTs;
+      setProjectiles((projectiles) =>
+        projectiles.map((projectile) => updateProjectile(projectile, delta))
+      );
+      setExplosions((explosions) =>
+        explosions.map((explosion) => updateExplosion(explosion, t, delta))
+      );
       t += ts - lastTs;
       lastTs = ts;
       requestAnimationFrame(draw);
     }
 
+    function resetAnimation() {
+      t = 0;
+      setExplosions([]);
+      setProjectiles(() => [
+        newProjectile(
+          random(-250, 250),
+          PROJECTILE_START_Y,
+          random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
+          random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
+        ),
+      ]);
+
+      setTimeout(() => {
+        setProjectiles((projectiles) =>
+          projectiles.concat(
+            newProjectile(
+              projectiles[0].x +
+                random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
+              PROJECTILE_START_Y,
+              random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
+              random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
+            )
+          )
+        );
+      }, 100);
+
+      setTimeout(() => {
+        setExplosions(() =>
+          projectiles().map((explosion) =>
+            newExplosion(
+              EXPLOSION_PARTICLE_COUNT,
+              explosion.x,
+              explosion.y,
+              explosion.vx / 4,
+              explosion.vy / 4
+            )
+          )
+        );
+        setProjectiles([]);
+      }, SHOOT_DURATION);
+    }
+
+    resetAnimation();
     requestAnimationFrame((ts) => {
       lastTs = ts;
     });
     requestAnimationFrame(draw);
 
-    setInterval(() => {
-      t = 0;
-      setFlames(() => newExplosion(EXPLOSION_PARTICLE_COUNT));
-    }, ANIMATION_DURATION);
+    setInterval(resetAnimation, ANIMATION_DURATION);
   });
 
   return (
@@ -109,13 +203,31 @@ export function Firework() {
       shape-rendering="crispEdges"
       stroke-width="2"
       stroke="black"
-      width="100%"
-      height="100%"
     >
-      <g transform="translate(450, 200)">
-        <For each={flames()}>
-          {(flame) => (
-            <circle cx={flame.cx} cy={flame.cy} r={flame.r} fill={flame.fill} />
+      <g transform="translate(440, 205)">
+        <For each={projectiles()}>
+          {(projectile) => (
+            <line
+              x1={projectile.x}
+              y1={projectile.y}
+              x2={projectile.x2}
+              y2={projectile.y2}
+              stroke="black"
+            />
+          )}
+        </For>
+        <For each={explosions()}>
+          {(particles) => (
+            <For each={particles}>
+              {(flame) => (
+                <circle
+                  cx={flame.x}
+                  cy={flame.y}
+                  r={flame.r}
+                  fill={flame.fill}
+                />
+              )}
+            </For>
           )}
         </For>
       </g>
@@ -137,29 +249,21 @@ function generateNormalizedVectors(n: number): DOMPointReadOnly[] {
   return vectors;
 }
 
-function linear(t: number, x: number) {
-  return ((EXPLOSION_DURATION - t) / EXPLOSION_DURATION) * x;
-}
+function generatePointsInsideCircle(
+  n: number,
+  radius: number,
+  x: number = 0,
+  y: number = 0
+) {
+  let points: any[] = [];
 
-function easeOutQuadratic(t: number): number {
-  return 1 - t * t;
-}
+  for (let i = 0; i < n; i++) {
+    const d = Math.sqrt(Math.random());
+    const theta = Math.random() * 2 * Math.PI;
+    const vx = d * Math.cos(theta);
+    const vy = d * Math.sin(theta);
+    points.push({ x: x + vx * radius, y: y + vy * radius, vx, vy });
+  }
 
-// Quadratic ease-in function
-function easeInQuadratic(t: number): number {
-  return t * t;
-}
-
-function randomNormal(mu: number = 0, sigma: number = 1): number {
-  let u = 0,
-    v = 0;
-  while (u === 0) u = Math.random(); //Converting [0,1) to (0,1)
-  while (v === 0) v = Math.random();
-  let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-  return num * sigma + mu;
-}
-
-function wiggle(initialValue: number, variance: number): number {
-  const normalRandom = randomNormal(0, variance);
-  return initialValue + normalRandom;
+  return points;
 }
