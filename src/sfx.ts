@@ -9,8 +9,8 @@ export function loopedDealSound(repeats: number) {
   dealAudio.loop = true;
   setTimeout(() => {
     dealAudio.pause();
+    dealAudio.currentTime = 0;
     dealAudio.loop = false;
-    dealAudio.fastSeek(0);
   }, dealAudio.duration * repeats * 1000);
 
   dealAudio.play();

@@ -71,7 +71,7 @@ export function DifficultyDialog(props: Omit<DialogProps, "title">) {
           >
             OK
           </button>
-          <button>Cancel</button>
+          <button value="">Cancel</button>
         </div>
       </form>
     </Dialog>
