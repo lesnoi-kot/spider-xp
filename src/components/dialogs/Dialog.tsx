@@ -14,7 +14,7 @@ export function Dialog({ title, children, ...rest }: DialogProps) {
         <div class="title-bar-text">{title}</div>
         <div class="title-bar-controls">
           <form method="dialog">
-            <button aria-label="Close"></button>
+            <button value="" aria-label="Close"></button>
           </form>
         </div>
       </div>
