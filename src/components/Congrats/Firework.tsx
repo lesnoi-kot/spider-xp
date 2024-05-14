@@ -1,27 +1,8 @@
-import { random, sample } from "lodash";
-import { For, createSignal, onMount } from "solid-js";
+import { random, sample, shuffle } from "lodash";
+import { For, onCleanup, onMount } from "solid-js";
+import { createStore, produce } from "solid-js/store";
 
-type Projectile = {
-  x: number;
-  y: number;
-  x2: number;
-  y2: number;
-  vx: number;
-  vy: number;
-  theta: number;
-  speed: number;
-};
-
-type Particle = {
-  x: number;
-  y: number;
-  r: number;
-  fill: string;
-  vx: number;
-  vy: number;
-  vr: number;
-};
-type Explosion = Particle[];
+import type { Projectile, FireworkState, Particle } from "./types";
 
 const SHOOT_DURATION = 1200;
 const EXPLOSION_DURATION = 1700;
@@ -35,7 +16,7 @@ const INITIAL_PARTICLE_RADIUS = 5;
 const PARTICLE_COLORS = ["red", "lime", "purple", "yellow", "blue", "fuchsia"];
 
 const PROJECTILE_START_Y = 370;
-const PROJECTILE_LENGTH = 30;
+const PROJECTILE_LENGTH = 25;
 const PROJECTILE_DEVIATION = 20;
 
 function newExplosion(
@@ -44,9 +25,9 @@ function newExplosion(
   y: number,
   mX: number,
   mY: number
-): Explosion {
+): Particle[] {
   const fill = sample(PARTICLE_COLORS)!;
-  const initialSpeed = 0.13;
+  const initialSpeed = 0.15;
 
   return generatePointsInsideCircle(n - 20, EXPLOSION_MIN_RADIUS, x, y)
     .concat(
@@ -92,98 +73,99 @@ function newProjectile(
   };
 }
 
-function updateExplosion(
-  e: Explosion,
+function updateParticles(
+  particles: Particle[],
   currentTime: number,
   delta: number
-): Explosion {
-  const startedFading = currentTime > EXPLOSION_DURATION + 500;
+): void {
+  const startedFading = currentTime > EXPLOSION_DURATION + 1000;
 
-  return e
-    .map((particle) => ({
-      ...particle,
-      x: particle.x + particle.vx * delta,
-      y: particle.y + particle.vy * delta,
-      vx: particle.vx * 0.4 ** (delta / 1000),
-      vy: particle.vy * 0.4 ** (delta / 1000) + delta / 35_000,
-      r: startedFading ? particle.r - particle.vr * delta : particle.r,
-    }))
-    .filter((flame) => flame.r >= 1);
+  for (const particle of particles) {
+    particle.x += particle.vx * delta;
+    particle.y += particle.vy * delta;
+    particle.vx = particle.vx * 0.4 ** (delta / 1000);
+    particle.vy = particle.vy * 0.4 ** (delta / 1000) + delta / 35_000;
+
+    if (startedFading) {
+      particle.r -= particle.vr * delta;
+    }
+  }
 }
 
-function updateProjectile(p: Projectile, delta: number): Projectile {
-  const x = p.x - p.vx * delta;
-  const y = p.y - p.vy * delta;
-
-  return {
-    ...p,
-    x: x,
-    y: y,
-    x2: x + Math.cos(p.theta) * PROJECTILE_LENGTH,
-    y2: y + Math.sin(p.theta) * PROJECTILE_LENGTH,
-  };
+function updateProjectile(p: Projectile, delta: number): void {
+  p.x -= p.vx * delta;
+  p.y -= p.vy * delta;
+  p.x2 = p.x + Math.cos(p.theta) * PROJECTILE_LENGTH;
+  p.y2 = p.y + Math.sin(p.theta) * PROJECTILE_LENGTH;
 }
 
 export function Firework() {
-  const [explosions, setExplosions] = createSignal<Explosion[]>([]);
-  const [projectiles, setProjectiles] = createSignal<Projectile[]>([]);
+  const [fireworkState, setFireworkState] = createStore<FireworkState>({
+    projectiles: [],
+    particles: [],
+  });
 
   onMount(() => {
     let lastTs: DOMHighResTimeStamp;
     let t = 0;
+    let requestId: number;
 
     function draw(ts: DOMHighResTimeStamp) {
       const delta = ts - lastTs;
-      setProjectiles((projectiles) =>
-        projectiles.map((projectile) => updateProjectile(projectile, delta))
+
+      setFireworkState(
+        produce(({ projectiles, particles }) => {
+          updateParticles(particles, t, delta);
+          projectiles.forEach((projectile) => {
+            updateProjectile(projectile, delta);
+          });
+        })
       );
-      setExplosions((explosions) =>
-        explosions.map((explosion) => updateExplosion(explosion, t, delta))
-      );
+
       t += ts - lastTs;
       lastTs = ts;
-      requestAnimationFrame(draw);
+      requestId = requestAnimationFrame(draw);
     }
 
     function resetAnimation() {
       t = 0;
-      setExplosions([]);
-      setProjectiles(() => [
-        newProjectile(
-          random(-250, 250),
-          PROJECTILE_START_Y,
-          random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
-          random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
-        ),
-      ]);
+
+      setFireworkState(() => ({
+        particles: [],
+        projectiles: [
+          newProjectile(
+            random(-250, 250),
+            PROJECTILE_START_Y,
+            random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
+            random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
+          ),
+        ],
+      }));
 
       setTimeout(() => {
-        setProjectiles((projectiles) =>
-          projectiles.concat(
+        setFireworkState((state) => ({
+          ...state,
+          projectiles: state.projectiles.concat(
             newProjectile(
-              projectiles[0].x +
+              state.projectiles[0].x +
                 random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
               PROJECTILE_START_Y,
               random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
               random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
             )
-          )
-        );
+          ),
+        }));
       }, 100);
 
       setTimeout(() => {
-        setExplosions(() =>
-          projectiles().map((explosion) =>
-            newExplosion(
-              EXPLOSION_PARTICLE_COUNT,
-              explosion.x,
-              explosion.y,
-              explosion.vx / 4,
-              explosion.vy / 4
+        setFireworkState((state) => ({
+          projectiles: [],
+          particles: shuffle(
+            state.projectiles.flatMap(({ x, y, vx, vy }) =>
+              newExplosion(EXPLOSION_PARTICLE_COUNT, x, y, vx / 4, vy / 4)
             )
-          )
-        );
-        setProjectiles([]);
+          ),
+        }));
       }, SHOOT_DURATION);
     }
 
@@ -193,7 +175,12 @@ export function Firework() {
     });
     requestAnimationFrame(draw);
 
-    setInterval(resetAnimation, ANIMATION_DURATION);
+    const animationResetTimer = setInterval(resetAnimation, ANIMATION_DURATION);
+
+    onCleanup(() => {
+      clearInterval(animationResetTimer);
+      cancelAnimationFrame(requestId);
+    });
   });
 
   return (
@@ -205,7 +192,7 @@ export function Firework() {
       stroke="black"
     >
       <g transform="translate(440, 205)">
-        <For each={projectiles()}>
+        <For each={fireworkState.projectiles}>
           {(projectile) => (
             <line
               x1={projectile.x}
@@ -216,18 +203,14 @@ export function Firework() {
             />
           )}
         </For>
-        <For each={explosions()}>
-          {(particles) => (
-            <For each={particles}>
-              {(flame) => (
-                <circle
-                  cx={flame.x}
-                  cy={flame.y}
-                  r={flame.r}
-                  fill={flame.fill}
-                />
-              )}
-            </For>
+        <For each={fireworkState.particles}>
+          {(particle) => (
+            <circle
+              cx={particle.x}
+              cy={particle.y}
+              r={particle.r}
+              fill={particle.fill}
+            />
           )}
         </For>
       </g>

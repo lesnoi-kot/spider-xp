@@ -47,3 +47,18 @@
   z-index: calc(var(--dialog-zIndex) - 1);
   pointer-events: none;
 }
+
+@keyframes flash {
+  from {
+    fill: white;
+  }
+}
+
+:global(#firework circle) {
+  animation-name: flash;
+  animation-duration: 500ms;
+  animation-play-state: running;
+  animation-direction: normal;
+  animation-iteration-count: 1;
+  animation-timing-function: linear;
+}
