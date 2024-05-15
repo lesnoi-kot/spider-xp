@@ -70,13 +70,13 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
       role="button"
       id={props.id}
       class={clsx(
+        css["card-table"],
         css[`card-${props.suit}`],
         css[`card-${props.rank}`],
         props.hidden && css["card-hidden"]
       )}
       style={{
         "margin-top": `${marginTop()}px`,
-        "grid-row": "1",
         "grid-column": `${props.column + 1}`,
         translate: translate(),
         transition: props.transition,
@@ -85,7 +85,7 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
         cursor: game.uiFrozen || props.hidden ? undefined : "pointer",
       }}
       draggable="false"
-      onMouseDown={(event) => {
+      onPointerDown={(event) => {
         if (game.uiFrozen || props.hidden || event.button !== 0) {
           return;
         }
@@ -98,6 +98,7 @@ export function TableCard(props: TableCard & ComponentProps<"div">) {
             originX: event.clientX,
             originY: event.clientY,
           });
+          selectAudio.currentTime = 0;
           selectAudio.play();
         } else {
           setPressedCard(props.id);

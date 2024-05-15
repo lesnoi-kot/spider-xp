@@ -6,7 +6,7 @@
   position: relative;
   display: grid;
   height: 550px;
-  width: 880px;
+  max-width: 880px;
   padding: 10px 0;
   justify-items: center;
 

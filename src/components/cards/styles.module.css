@@ -16,6 +16,16 @@
   background-position: var(--card-offset-x) var(--card-offset-y);
 }
 
+.card-table {
+  grid-row: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 .card-spades {
   background-position-x: calc(var(--card-offset-x) - 0 * var(--card-gap-x));
 }

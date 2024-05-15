@@ -32,7 +32,7 @@ createEffect(() => {
   );
 });
 
-document.addEventListener("mousemove", (event) => {
+document.addEventListener("pointermove", (event) => {
   const handCards = dragedCards();
   if (handCards.length === 0) {
     return;
@@ -53,7 +53,7 @@ document.addEventListener("mousemove", (event) => {
   );
 });
 
-document.addEventListener("mouseup", () => {
+document.addEventListener("pointerup", () => {
   const handCards = dragedCards();
   if (handCards.length === 0) {
     return;
