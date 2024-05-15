@@ -6,7 +6,7 @@ export type Projectile = {
   vx: number;
   vy: number;
   theta: number;
-  speed: number;
+  targetY: number;
 };
 
 export type Particle = {
