@@ -298,37 +298,31 @@ export function getTips(): Tips {
 
   for (let i = 0; i < game.table.length; i++) {
     const target = game.table[i].at(-1);
-
-    if (!target) {
-      continue;
-    }
+    const targetSlot = game.slots[i];
 
     for (let j = 0; j < game.table.length; j++) {
-      if (j === i) continue;
-
       const currStack = game.table[j];
+
+      if (j === i || currStack.length === 0) {
+        continue;
+      }
+
       let k = currStack.length - 1;
 
-      while (k >= 0) {
-        const currCard = currStack[k];
-
-        if (currCard.hidden || !cardLesser(currCard, target)) {
-          break;
-        }
-
-        if (cardsStackable(currCard, target)) {
-          tips.push({
-            from: currStack.slice(k),
-            to: target,
-          });
-          break;
-        }
-
-        if (k - 1 >= 0 && !cardsStackable(currCard, currStack[k - 1])) {
+      while (k > 0) {
+        if (
+          currStack[k - 1].hidden ||
+          !cardsStackable(currStack[k], currStack[k - 1])
+        ) {
           break;
         }
 
         k--; // Climb up to the top of the card stack
+      }
+
+      const from = currStack.slice(k);
+      if (from.length && (!target || cardsStackable(from[0], target))) {
+        tips.push({ from, to: target ?? targetSlot });
       }
     }
   }

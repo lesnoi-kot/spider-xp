@@ -39,29 +39,22 @@ export function ScoreBoard() {
         hintAudio.pause();
         hintAudio.currentTime = 0;
         hintAudio.play();
-
         tip.from.forEach((card) => {
           const elFrom = document.getElementById(card.id);
-          elFrom?.animate(
-            [{ "--card-offset-x": "var(--card--highlight-offset-x)" }],
-            {
-              duration: 500,
-              iterations: 1,
-              easing: "step-start",
-            }
-          );
+          elFrom?.animate([{ filter: "invert(100%)" }], {
+            duration: 500,
+            iterations: 1,
+            easing: "step-start",
+          });
         });
 
         const elTo = document.getElementById(tip.to.id);
-        elTo?.animate(
-          [{ "--card-offset-x": "var(--card--highlight-offset-x)" }],
-          {
-            duration: 500,
-            iterations: 1,
-            delay: 250,
-            easing: "step-start",
-          }
-        );
+        elTo?.animate([{ filter: "invert(100%)" }], {
+          duration: 500,
+          iterations: 1,
+          delay: 250,
+          easing: "step-start",
+        });
       }}
     >
       <div>
