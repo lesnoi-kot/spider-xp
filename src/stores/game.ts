@@ -67,7 +67,7 @@ export function newGameState({
       initialCards.filter((card) => card.column === column)
     ),
     removed: [],
-    score: 0,
+    score: 500,
     moves: 0,
     uiFrozen: false,
   };
@@ -146,6 +146,7 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
         card.row = row;
       });
       game.moves += 1;
+      game.score -= 1;
     })
   );
   checkCardsGathered();
@@ -197,7 +198,7 @@ export function checkCardsGathered() {
           animateCardRemoval(card, arr.length - i - 1, to).then(() => {
             setGame(
               produce((game) => {
-                game.score += 100;
+                game.score += 10;
               })
             );
           })

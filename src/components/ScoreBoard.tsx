@@ -57,16 +57,10 @@ export function ScoreBoard() {
         });
       }}
     >
-      <div>
-        <span style="display: inline-block; text-align: right;">Score:</span>
-        &nbsp;
-        <span>{game.score}</span>
-      </div>
-      <div>
-        <span style="display: inline-block; text-align: right;">Moves:</span>
-        &nbsp;
-        <span>{game.moves}</span>
-      </div>
+      <span style="text-align: right">Score:</span>
+      <span>{game.score}</span>
+      <span>Moves:</span>
+      <span>{game.moves}</span>
     </div>
   );
 }

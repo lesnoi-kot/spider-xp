@@ -7,15 +7,17 @@
 
 .scoreboard {
   font-size: 1rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-areas:
+    "a b"
+    "c d";
   place-content: center;
+  column-gap: 0.5ch;
   height: 95px;
   width: 200px;
   background: green;
   color: white;
   border: 1px solid black;
   cursor: pointer;
-  text-align: center;
   user-select: none;
 }
