@@ -24,22 +24,25 @@ export type Card = {
   rank: Rank;
 };
 
-export type TableCard = Card & {
-  id: string;
-  row: number;
-  column: number;
-  hidden: boolean; // Show the "spider" backside
-
-  transition?: string;
-  translateX?: number;
-  translateY?: number;
-  visible?: boolean;
-  zIndex?: number;
-};
-
-export type CardSlot = {
+export type ReferenceableCardEntity = {
+  // Allows to reference a card, table card or card slot by HTML id attr.
   id: string;
 };
+
+export type TableCard = Card &
+  ReferenceableCardEntity & {
+    row: number;
+    column: number;
+    hidden: boolean; // Show the "spider" backside
+
+    transition?: string;
+    translateX?: number;
+    translateY?: number;
+    visible?: boolean;
+    zIndex?: number;
+  };
+
+export type CardSlot = ReferenceableCardEntity;
 
 export function getDeck(suit: Suit): Card[] {
   return RANKS.map((rank) => ({ suit, rank }));
@@ -50,6 +53,10 @@ export function cardsStackable(from: Card, to: Card): boolean {
     from.suit === to.suit &&
     RANKS.indexOf(to.rank) - RANKS.indexOf(from.rank) === 1
   );
+}
+
+export function cardLesser(a: Card, b: Card): boolean {
+  return a.suit === b.suit && RANKS.indexOf(a.rank) < RANKS.indexOf(b.rank);
 }
 
 export function cardsSorted(cards: Card[]): boolean {

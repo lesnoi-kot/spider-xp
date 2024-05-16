@@ -12,6 +12,7 @@
   --card-gap-y: 100px;
   --card-offset-x: -15px;
   --card-offset-y: -35px;
+  --card--highlight-offset-x: -319px;
 
   background-position: var(--card-offset-x) var(--card-offset-y);
 }

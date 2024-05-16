@@ -7,10 +7,12 @@ import { take } from "lodash";
 import {
   Card,
   CardSlot,
+  ReferenceableCardEntity,
   SUITS,
   SUIT_SIZE,
   TableCard,
   allRevealed,
+  cardLesser,
   cardsSorted,
   cardsStackable,
   getDeck,
@@ -283,4 +285,53 @@ export async function animateCardRemoval(
     zIndex: 10 + order,
   });
   await sleep(FLY_DURATION);
+}
+
+type Tips = Array<{
+  from: ReferenceableCardEntity[]; // Cards to take
+  to: ReferenceableCardEntity; // The card to stack on
+}>;
+
+// Just bruteforce deez nuts
+export function getTips(): Tips {
+  const tips: Tips = [];
+
+  for (let i = 0; i < game.table.length; i++) {
+    const target = game.table[i].at(-1);
+
+    if (!target) {
+      continue;
+    }
+
+    for (let j = 0; j < game.table.length; j++) {
+      if (j === i) continue;
+
+      const currStack = game.table[j];
+      let k = currStack.length - 1;
+
+      while (k >= 0) {
+        const currCard = currStack[k];
+
+        if (currCard.hidden || !cardLesser(currCard, target)) {
+          break;
+        }
+
+        if (cardsStackable(currCard, target)) {
+          tips.push({
+            from: currStack.slice(k),
+            to: target,
+          });
+          break;
+        }
+
+        if (k - 1 >= 0 && !cardsStackable(currCard, currStack[k - 1])) {
+          break;
+        }
+
+        k--; // Climb up to the top of the card stack
+      }
+    }
+  }
+
+  return shuffle(tips);
 }
