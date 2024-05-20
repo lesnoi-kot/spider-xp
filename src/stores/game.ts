@@ -12,7 +12,6 @@ import {
   SUIT_SIZE,
   TableCard,
   allRevealed,
-  cardLesser,
   cardsSorted,
   cardsStackable,
   getDeck,
