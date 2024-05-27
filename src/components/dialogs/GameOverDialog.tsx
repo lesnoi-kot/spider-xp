@@ -8,7 +8,7 @@ export function GameOverDialog(props: Omit<DialogProps, "title" | "style">) {
       style={{
         width: "250px",
         inset: "auto 0 0 auto",
-        margin: "4px",
+        margin: "10px",
       }}
     >
       <form

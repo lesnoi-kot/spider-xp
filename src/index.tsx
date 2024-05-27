@@ -1,9 +1,9 @@
 /* @refresh reload */
 import { render } from "solid-js/web";
 
-import { App } from "./App";
+import "/node_modules/xp.css/dist/XP.css";
 import "./index.css";
 
-const root = document.getElementById("root");
+import { App } from "./App";
 
-render(() => <App />, root!);
+render(() => <App />, document.getElementById("root")!);

@@ -231,7 +231,7 @@ export function Firework() {
       stroke-width="2"
       stroke="black"
     >
-      <g transform="translate(440, 245)">
+      <g style="transform: translate(50%, 42%);">
         <For each={fireworkState.projectiles}>
           {(projectile) => (
             <line

@@ -1,8 +1,18 @@
 .game {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
 
   --dialog-zIndex: 200;
   --table-zIndex: unset;
+}
+
+.game-body {
+  display: flex;
+  flex-direction: column;
+  place-content: center;
+  flex-grow: 1;
+  margin: 0 3px;
 }
 
 .scoreboard {

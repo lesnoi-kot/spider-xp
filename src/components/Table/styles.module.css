@@ -1,8 +1,4 @@
 .table {
-  background: url("/felt.png");
-}
-
-.table-grid {
   position: relative;
   display: grid;
   height: 550px;
@@ -11,9 +7,16 @@
   justify-items: center;
 
   --slots: 10;
-
   grid-template-columns: repeat(var(--slots), 1fr);
   grid-template-rows: 100px 1fr 100px;
+
+  background: url("/felt.png");
+}
+
+:fullscreen .table {
+  height: 100%;
+  width: 100%;
+  max-width: unset;
 }
 
 .table-hidden-stack {

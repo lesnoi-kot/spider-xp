@@ -1,7 +1,7 @@
-import { Show, createEffect, onMount } from "solid-js";
+import { Show, createSignal, onMount } from "solid-js";
+import clsx from "clsx";
 
 import { isGameOver, startNewGame } from "@/stores/game";
-import { winAudio } from "@/sfx";
 
 import { Table } from "./Table";
 import { AboutDialog, DifficultyDialog } from "./dialogs";
@@ -10,16 +10,19 @@ import { Congrats } from "./Congrats/Congrats";
 import css from "./styles.module.css";
 
 export function Game() {
+  let gameContainerRef: HTMLDivElement;
+  const [gameOverVisible, setGameOverVisible] = createSignal(false);
   let difficultyDialog: HTMLDialogElement,
     aboutDialog: HTMLDialogElement,
     gameOverDialog: HTMLDialogElement;
 
-  createEffect(() => {
-    if (isGameOver()) {
-      winAudio.play();
-      gameOverDialog.show();
+  function toggleFullScreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      gameContainerRef.requestFullscreen();
     }
-  });
+  }
 
   onMount(() => {
     difficultyDialog.addEventListener("close", () => {
@@ -45,51 +48,81 @@ export function Game() {
       }, 50);
     });
 
+    document.addEventListener("keydown", (event) => {
+      switch (event.code) {
+        case "KeyF":
+          toggleFullScreen();
+          break;
+        default:
+          break;
+      }
+    });
+
     difficultyDialog.show();
   });
 
   return (
     <div
-      class={css["game"]}
-      style="position: relative; display: flex; flex-direction: column; width: fit-content; place-content: center;"
+      /* @ts-ignore */
+      ref={gameContainerRef}
+      class={clsx(css["game"], "window")}
     >
-      <div style="background: #f5f6f7;">
-        <button
-          style="border: 0; box-shadow: none; background: inherit;"
-          onClick={() => {
-            difficultyDialog.show();
-          }}
-        >
-          New game
-        </button>
-        <button
-          style="border: 0; box-shadow: none; background: inherit;"
-          onClick={() => {
-            aboutDialog.show();
-          }}
-        >
-          Help
-        </button>
+      <div class="title-bar">
+        <div class="title-bar-text">Spider</div>
       </div>
+      <div class={clsx("window-body", css["game-body"])}>
+        <div>
+          <button
+            style="border: 0; box-shadow: none; background: inherit;"
+            onClick={() => {
+              difficultyDialog.show();
+            }}
+          >
+            New game
+          </button>
+          <button
+            style="border: 0; box-shadow: none; background: inherit;"
+            onClick={() => {
+              setGameOverVisible((value) => !value);
+            }}
+          >
+            Game Over
+          </button>
+          <button
+            style="border: 0; box-shadow: none; background: inherit;"
+            onClick={toggleFullScreen}
+          >
+            Fullscreen (F)
+          </button>
+          <button
+            style="border: 0; box-shadow: none; background: inherit;"
+            onClick={() => {
+              aboutDialog.show();
+            }}
+          >
+            Help
+          </button>
+        </div>
 
-      {/* @ts-ignore */}
-      <DifficultyDialog ref={difficultyDialog} />
-      {/* @ts-ignore */}
-      <AboutDialog ref={aboutDialog} />
+        {/* @ts-ignore */}
+        <DifficultyDialog ref={difficultyDialog} />
+        {/* @ts-ignore */}
+        <AboutDialog ref={aboutDialog} />
 
-      <Show when={isGameOver()}>
-        <Congrats
-          gameOverDialogRef={(ref) => {
-            gameOverDialog = ref;
-            gameOverDialog.addEventListener("close", () => {
-              if (gameOverDialog.returnValue === "yes") {
-                difficultyDialog.show();
-              }
-            });
-          }}
-        />
-      </Show>
-      <Table />
+        <Show when={gameOverVisible() || isGameOver()}>
+          <Congrats
+            gameOverDialogRef={(ref) => {
+              gameOverDialog = ref;
+              gameOverDialog.addEventListener("close", () => {
+                if (gameOverDialog.returnValue === "yes") {
+                  difficultyDialog.show();
+                }
+              });
+            }}
+          />
+        </Show>
+        <Table />
+      </div>
     </div>
   );
 }
