@@ -1,8 +1,6 @@
 import { nanoid } from "nanoid";
 import { createStore, produce } from "solid-js/store";
-import range from "lodash/range";
-import shuffle from "lodash/shuffle";
-import { take } from "lodash";
+import { range, shuffle, take } from "lodash";
 
 import {
   Card,
@@ -30,6 +28,7 @@ export type GameState = {
   deck: Card[]; // Shuffled cards list to take a card from
   table: TableCard[][]; // Cards of each column
   removed: Card[]; // King cards of removed decks
+  history: Array<Record<number, TableCard[]>>; // Moves history. Stored only for current deal.
   score: number;
   moves: number;
   uiFrozen: boolean;
@@ -66,6 +65,7 @@ export function newGameState({
       initialCards.filter((card) => card.column === column)
     ),
     removed: [],
+    history: [],
     score: 500,
     moves: 0,
     uiFrozen: false,
@@ -133,7 +133,13 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
 
   setGame(
     produce((game) => {
+      game.history.push({
+        [fromColumn]: game.table[fromColumn].map((card) => ({ ...card })),
+        [toColumn]: game.table[toColumn].map((card) => ({ ...card })),
+      });
+
       const removedCards = game.table[fromColumn].splice(-cards.length);
+
       if (game.table[fromColumn].length > 0) {
         game.table[fromColumn][game.table[fromColumn].length - 1].hidden =
           false;
@@ -144,12 +150,11 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
         card.column = toColumn;
         card.row = row;
       });
-      game.moves += 1;
-      game.score -= 1;
+      game.moves++;
+      game.score--;
     })
   );
   checkCardsGathered();
-
   return true;
 }
 
@@ -158,6 +163,7 @@ export function dealCards(extra?: Partial<TableCard>): TableCard[] {
 
   setGame(
     produce((game) => {
+      game.history.length = 0;
       const dealtCards = game.deck.slice(0, game.slots.length);
       game.deck = game.deck.slice(game.slots.length);
 
@@ -188,6 +194,12 @@ export function checkCardsGathered() {
       allRevealed(cards) &&
       cardsSorted(cards)
     ) {
+      setGame(
+        produce((game) => {
+          game.history.length = 0;
+        })
+      );
+
       const to = document.getElementById("trash")!.getBoundingClientRect();
 
       freezeUI();
@@ -214,6 +226,25 @@ export function checkCardsGathered() {
       });
     }
   });
+}
+
+export function undoMove() {
+  if (game.history.length === 0) {
+    return;
+  }
+
+  setGame(
+    produce((game) => {
+      const prevTableState = game.history.pop();
+
+      for (const column in prevTableState) {
+        game.table[+column] = prevTableState[+column];
+      }
+
+      game.moves++;
+      game.score--;
+    })
+  );
 }
 
 export function isGameOver() {

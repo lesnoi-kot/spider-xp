@@ -1,11 +1,11 @@
-import { Show, createSignal, onMount } from "solid-js";
 import clsx from "clsx";
+import { Show, createSignal, onMount } from "solid-js";
 
-import { isGameOver, startNewGame } from "@/stores/game";
+import { isGameOver, startNewGame, undoMove } from "@/stores/game";
 
+import { Congrats } from "./Congrats/Congrats";
 import { Table } from "./Table";
 import { AboutDialog, DifficultyDialog } from "./dialogs";
-import { Congrats } from "./Congrats/Congrats";
 
 import css from "./styles.module.css";
 
@@ -53,6 +53,11 @@ export function Game() {
         case "KeyF":
           toggleFullScreen();
           break;
+        case "KeyZ":
+          if (event.ctrlKey) {
+            undoMove();
+          }
+          break;
         default:
           break;
       }
@@ -87,6 +92,14 @@ export function Game() {
             }}
           >
             Game Over
+          </button>
+          <button
+            style="border: 0; box-shadow: none; background: inherit;"
+            onClick={() => {
+              undoMove();
+            }}
+          >
+            Undo (Ctrl-Z)
           </button>
           <button
             style="border: 0; box-shadow: none; background: inherit;"

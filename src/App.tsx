@@ -7,7 +7,8 @@ export function App() {
     <ErrorBoundary
       fallback={(err) => (
         <div style="font-size: xxx-large; color: aquamarine;">
-          {String(err)}
+          <p>{String(err)}</p>
+          <pre>{err instanceof Error && (err.stack ?? null)}</pre>
         </div>
       )}
     >

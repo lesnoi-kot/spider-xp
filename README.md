@@ -1,5 +1,3 @@
 # Spider
 
 ## TODO
-
-- Ctrl Z
