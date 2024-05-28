@@ -15,11 +15,11 @@ const EXPLOSION_PARTICLE_COUNT = 100;
 const INITIAL_PARTICLE_RADIUS = 5;
 const PARTICLE_INITIAL_SPEED = 270;
 
-const PROJECTILE_START_Y = 370;
-const PROJECTILE_TARGET_Y = 0;
+const PROJECTILE_TARGET_X = 0;
+const PROJECTILE_TARGET_Y = -50;
 const PROJECTILE_LENGTH = 25;
 const PROJECTILE_DEVIATION = 40;
-const SECOND_PROJECTILE_DELAY = 150;
+const SECOND_PROJECTILE_DELAY = 200;
 
 function newExplosion(
   n: number,
@@ -114,10 +114,23 @@ function updateProjectile(p: Projectile, delta: number): void {
 }
 
 export function Firework() {
+  let spawnRef: SVGCircleElement;
   const [fireworkState, setFireworkState] = createStore<FireworkState>({
     projectiles: [],
     particles: [],
   });
+
+  function getSpawnY(): number {
+    const m = spawnRef?.getCTM();
+    if (!m) {
+      return 0;
+    }
+    return new DOMPoint().matrixTransform(m).y;
+  }
+
+  function withDeviation(v: number) {
+    return v + random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION);
+  }
 
   onMount(() => {
     let lastTs: DOMHighResTimeStamp;
@@ -134,12 +147,10 @@ export function Firework() {
           ...state,
           projectiles: state.projectiles.concat(
             newProjectile(
-              state.projectiles[0].x +
-                random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
-              PROJECTILE_START_Y,
-              random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
-              PROJECTILE_TARGET_Y +
-                random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
+              withDeviation(state.projectiles[0].x),
+              getSpawnY(),
+              withDeviation(PROJECTILE_TARGET_X),
+              withDeviation(PROJECTILE_TARGET_Y)
             )
           ),
         }));
@@ -187,10 +198,9 @@ export function Firework() {
         projectiles: [
           newProjectile(
             random(-250, 250),
-            PROJECTILE_START_Y,
-            random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION),
-            PROJECTILE_TARGET_Y +
-              random(-PROJECTILE_DEVIATION, PROJECTILE_DEVIATION)
+            getSpawnY(),
+            withDeviation(PROJECTILE_TARGET_X),
+            withDeviation(PROJECTILE_TARGET_Y)
           ),
         ],
       }));
@@ -231,7 +241,16 @@ export function Firework() {
       stroke-width="2"
       stroke="black"
     >
-      <g style="transform: translate(50%, 42%);">
+      <g style="transform: translate(50%, 50%);">
+        <circle
+          /* @ts-ignore */
+          ref={spawnRef}
+          id="firework-spawn"
+          cx="0"
+          cy="50%"
+          r="10"
+          opacity="0"
+        />
         <For each={fireworkState.projectiles}>
           {(projectile) => (
             <line

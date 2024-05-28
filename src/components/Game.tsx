@@ -85,14 +85,16 @@ export function Game() {
           >
             New game
           </button>
-          <button
-            style="border: 0; box-shadow: none; background: inherit;"
-            onClick={() => {
-              setGameOverVisible((value) => !value);
-            }}
-          >
-            Game Over
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              style="border: 0; box-shadow: none; background: inherit;"
+              onClick={() => {
+                setGameOverVisible((value) => !value);
+              }}
+            >
+              Game Over
+            </button>
+          )}
           <button
             style="border: 0; box-shadow: none; background: inherit;"
             onClick={() => {
