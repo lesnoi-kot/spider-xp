@@ -34,6 +34,9 @@ export type GameState = {
   uiFrozen: boolean;
 };
 
+export const HIDDEN_DECK_ID = "deck";
+export const REMOVED_DECK_ID = "trash";
+
 export function newGameState({
   slots,
   suitCount,
@@ -140,12 +143,15 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
 
       const removedCards = game.table[fromColumn].splice(-cards.length);
 
+      // Reveal a hidden card under the moved card
       if (game.table[fromColumn].length > 0) {
         game.table[fromColumn][game.table[fromColumn].length - 1].hidden =
           false;
       }
 
       game.table[toColumn].push(...removedCards);
+
+      // Adjust column/row values in cards
       game.table[toColumn].forEach((card, row) => {
         card.column = toColumn;
         card.row = row;
@@ -158,8 +164,8 @@ export function moveCards(cards: TableCard[], toColumn: number): boolean {
   return true;
 }
 
-export function dealCards(extra?: Partial<TableCard>): TableCard[] {
-  let result: TableCard[] = [];
+export async function dealCards() {
+  let dealtTableCards: TableCard[] = [];
 
   setGame(
     produce((game) => {
@@ -167,26 +173,53 @@ export function dealCards(extra?: Partial<TableCard>): TableCard[] {
       const dealtCards = game.deck.slice(0, game.slots.length);
       game.deck = game.deck.slice(game.slots.length);
 
-      result = dealtCards.map((card, column) => {
+      dealtTableCards = dealtCards.map((card, column) => {
         const tableCard: TableCard = {
           id: nanoid(),
           hidden: false,
           row: game.table[column].length,
-          column: column,
-          ...extra,
+          column,
           ...card,
         };
-
         game.table[column].push(tableCard);
         return tableCard;
       });
     })
   );
 
-  return result;
+  if (dealtTableCards.length === 0) {
+    return;
+  }
+
+  const deckPlaceBox = document
+    .getElementById(HIDDEN_DECK_ID)!
+    .getBoundingClientRect();
+  const FLY_DURATION = 250;
+  const FLY_DELAY = 100;
+
+  loopedDealSound(getSlotsCount());
+
+  await Promise.allSettled(
+    dealtTableCards.map((card) => {
+      const cardBox = document.getElementById(card.id)!.getBoundingClientRect();
+      return animateCardFly({
+        card,
+        duration: FLY_DURATION,
+        delay: FLY_DELAY * card.column,
+        from: new DOMPointReadOnly(
+          deckPlaceBox.x - cardBox.x,
+          deckPlaceBox.y - cardBox.y
+        ),
+        to: new DOMPointReadOnly(0, 0),
+        zIndex: 100 - card.column,
+      });
+    })
+  );
+
+  checkCardsGathered();
 }
 
-export function checkCardsGathered() {
+function checkCardsGathered() {
   game.table.forEach((stack, column) => {
     const cards = stack.slice(-SUIT_SIZE);
     if (
@@ -200,25 +233,38 @@ export function checkCardsGathered() {
         })
       );
 
-      const to = document.getElementById("trash")!.getBoundingClientRect();
+      const toBox = document
+        .getElementById(REMOVED_DECK_ID)!
+        .getBoundingClientRect();
 
       freezeUI();
       loopedDealSound(getSlotsCount());
+
       Promise.all(
-        cards.map((card, i, arr) =>
-          animateCardRemoval(card, arr.length - i - 1, to).then(() => {
-            setGame(
-              produce((game) => {
-                game.score += 10;
-              })
-            );
-          })
-        )
+        cards.map((card, i, arr) => {
+          const order = arr.length - i - 1;
+          const cardBox = document
+            .getElementById(card.id)!
+            .getBoundingClientRect();
+          return animateCardFly({
+            card,
+            duration: 250,
+            delay: 100 * order,
+            from: { x: 0, y: 0 },
+            to: {
+              x: toBox.x - cardBox.x,
+              y: toBox.y - cardBox.y,
+            },
+            zIndex: 10 + order,
+          }).then(() => {
+            setGame("score", (score) => score + 10);
+          });
+        })
       ).then(() => {
         setGame(
           produce((game) => {
-            const [onOfRemovedCards] = game.table[column].splice(-SUIT_SIZE);
-            game.removed.push(onOfRemovedCards);
+            const [oneOfRemovedCards] = game.table[column].splice(-SUIT_SIZE);
+            game.removed.push(oneOfRemovedCards);
           })
         );
         unfreezeUI();
@@ -295,37 +341,53 @@ export function modifyCard(id: string, input: Partial<TableCard>) {
   );
 }
 
-export async function animateCardRemoval(
-  card: TableCard,
-  order: number,
-  to: DOMRect
-) {
-  const FLY_DURATION = 200;
-  const cardBox = document.getElementById(card.id)!.getBoundingClientRect();
-  modifyCard(card.id, {
-    translateX: 0,
-    translateY: 0,
-    transition: undefined,
-  });
+type CardFlyAnimationParams = {
+  card: TableCard;
+  duration: number;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  zIndex?: number;
+  delay?: number;
+};
 
-  await sleep(100 * order);
+export async function animateCardFly({
+  card,
+  duration,
+  from,
+  to,
+  zIndex,
+  delay,
+}: CardFlyAnimationParams) {
   modifyCard(card.id, {
-    translateX: to.x - cardBox.x,
-    translateY: to.y - cardBox.y,
-    transition: `translate ${FLY_DURATION}ms`,
-    zIndex: 10 + order,
+    translateX: from.x,
+    translateY: from.y,
+    transition: undefined,
+    visible: true,
   });
-  await sleep(FLY_DURATION);
+  if (typeof delay === "number") {
+    await sleep(delay);
+  }
+  modifyCard(card.id, {
+    translateX: to.x,
+    translateY: to.y,
+    transition: `translate ${duration}ms`,
+    zIndex,
+  });
+  await sleep(duration);
+  modifyCard(card.id, {
+    transition: undefined,
+    zIndex: undefined,
+  });
 }
 
-type Tips = Array<{
+export type Tip = {
   from: ReferenceableCardEntity[]; // Cards to take
   to: ReferenceableCardEntity; // The card to stack on
-}>;
+};
 
 // Just bruteforce deez nuts
-export function getTips(): Tips {
-  const tips: Tips = [];
+export function getTips(): Tip[] {
+  const tips: Tip[] = [];
 
   for (let i = 0; i < game.table.length; i++) {
     const target = game.table[i].at(-1);

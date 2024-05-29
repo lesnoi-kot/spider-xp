@@ -10,7 +10,7 @@ import { selectAudio } from "@/sfx";
 import { BaseCard } from "./placeholders";
 import css from "./styles.module.css";
 
-const MAX_STACK_HEIGHT = 400; // 330
+const MAX_STACK_HEIGHT = 400;
 const FULL_STEP = 28;
 const MIN_STEP = 7;
 

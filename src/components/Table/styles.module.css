@@ -10,6 +10,7 @@
   grid-template-columns: repeat(var(--slots), 1fr);
   grid-template-rows: 100px 1fr 100px;
 
+  background-color: #009933;
   background: url("/felt.png");
 }
 
@@ -19,23 +20,14 @@
   max-width: unset;
 }
 
-.table-hidden-stack {
+.hidden-deck {
   grid-row: 3;
   grid-column: var(--slots);
-  position: relative;
-  display: flex;
+
+  cursor: pointer;
 }
 
-.table-hidden-decks-place {
-  grid-row: 3;
-  grid-column: var(--slots);
-}
-
-.table-hidden-stack > div {
-  position: relative;
-}
-
-.table-removed-decks-place {
+.removed-deck {
   grid-row: 3;
   grid-column: 1;
 }

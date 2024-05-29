@@ -31,3 +31,9 @@
   cursor: pointer;
   user-select: none;
 }
+
+.menu button {
+  border: 0;
+  box-shadow: none !important;
+  background: inherit;
+}

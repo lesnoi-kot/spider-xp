@@ -1,27 +1,28 @@
 import { createMemo } from "solid-js";
 
 import { hintAudio, noHintAudio } from "@/sfx";
-import { game, getTips } from "@/stores/game";
+import { game, getTips, type Tip } from "@/stores/game";
 
 import css from "./styles.module.css";
 
+function* infiniteTipsGenerator(tips: Tip[]) {
+  if (tips.length === 0) {
+    return null;
+  }
+
+  while (true) {
+    for (const tip of tips) {
+      yield tip;
+    }
+  }
+}
+
 export function ScoreBoard() {
+  let clickBlocked = false;
+
   const tips = createMemo(() => {
     const tips = getTips();
-
-    function* tipsGenerator() {
-      if (tips.length === 0) {
-        return null;
-      }
-
-      while (true) {
-        for (const tip of tips) {
-          yield tip;
-        }
-      }
-    }
-
-    return tipsGenerator();
+    return infiniteTipsGenerator(tips);
   });
 
   return (
@@ -29,31 +30,24 @@ export function ScoreBoard() {
       role="button"
       class={css.scoreboard}
       onClick={() => {
-        const { value: tip } = tips().next();
+        if (clickBlocked || game.uiFrozen) {
+          return;
+        }
 
+        const { value: tip } = tips().next();
         if (!tip) {
           noHintAudio.play();
           return;
         }
 
+        clickBlocked = true;
+
         hintAudio.pause();
         hintAudio.currentTime = 0;
         hintAudio.play();
-        tip.from.forEach((card) => {
-          const elFrom = document.getElementById(card.id);
-          elFrom?.animate([{ filter: "invert(100%)" }], {
-            duration: 500,
-            iterations: 1,
-            easing: "step-start",
-          });
-        });
 
-        const elTo = document.getElementById(tip.to.id);
-        elTo?.animate([{ filter: "invert(100%)" }], {
-          duration: 500,
-          iterations: 1,
-          delay: 250,
-          easing: "step-start",
+        animateTip(tip).finally(() => {
+          clickBlocked = false;
         });
       }}
     >
@@ -63,4 +57,23 @@ export function ScoreBoard() {
       <span>{game.moves}</span>
     </div>
   );
+}
+
+const invertKeyframe = [{ filter: "invert(100%)" }];
+const invertOptions = {
+  duration: 500,
+  iterations: 1,
+  easing: "step-start",
+};
+
+function animateTip({ from, to }: Tip) {
+  const elTo = document.getElementById(to.id);
+
+  return Promise.all([
+    ...from.map((card) => {
+      const elFrom = document.getElementById(card.id);
+      return elFrom?.animate(invertKeyframe, invertOptions).finished;
+    }),
+    elTo?.animate(invertKeyframe, { ...invertOptions, delay: 250 }).finished,
+  ]);
 }

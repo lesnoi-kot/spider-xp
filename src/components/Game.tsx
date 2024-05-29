@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Show, createSignal, onMount } from "solid-js";
 
-import { isGameOver, startNewGame, undoMove } from "@/stores/game";
+import { dealCards, isGameOver, startNewGame, undoMove } from "@/stores/game";
 
 import { Congrats } from "./Congrats/Congrats";
 import { Table } from "./Table";
@@ -10,11 +10,12 @@ import { AboutDialog, DifficultyDialog } from "./dialogs";
 import css from "./styles.module.css";
 
 export function Game() {
-  let gameContainerRef: HTMLDivElement;
-  const [gameOverVisible, setGameOverVisible] = createSignal(false);
-  let difficultyDialog: HTMLDialogElement,
+  let gameContainerRef: HTMLDivElement,
+    difficultyDialog: HTMLDialogElement,
     aboutDialog: HTMLDialogElement,
     gameOverDialog: HTMLDialogElement;
+
+  const [gameOverVisible, setGameOverVisible] = createSignal(false);
 
   function toggleFullScreen() {
     if (document.fullscreenElement) {
@@ -43,9 +44,7 @@ export function Game() {
       }
 
       // Deal cards on the start
-      setTimeout(() => {
-        document.getElementById("deck")?.click();
-      }, 50);
+      setTimeout(dealCards, 0);
     });
 
     document.addEventListener("keydown", (event) => {
@@ -76,9 +75,8 @@ export function Game() {
         <div class="title-bar-text">Spider</div>
       </div>
       <div class={clsx("window-body", css["game-body"])}>
-        <div>
+        <div class={css.menu}>
           <button
-            style="border: 0; box-shadow: none; background: inherit;"
             onClick={() => {
               difficultyDialog.show();
             }}
@@ -87,7 +85,6 @@ export function Game() {
           </button>
           {import.meta.env.DEV && (
             <button
-              style="border: 0; box-shadow: none; background: inherit;"
               onClick={() => {
                 setGameOverVisible((value) => !value);
               }}
@@ -96,21 +93,16 @@ export function Game() {
             </button>
           )}
           <button
-            style="border: 0; box-shadow: none; background: inherit;"
             onClick={() => {
               undoMove();
             }}
           >
             Undo (Ctrl-Z)
           </button>
+          {document.fullscreenEnabled && (
+            <button onClick={toggleFullScreen}>Fullscreen (F)</button>
+          )}
           <button
-            style="border: 0; box-shadow: none; background: inherit;"
-            onClick={toggleFullScreen}
-          >
-            Fullscreen (F)
-          </button>
-          <button
-            style="border: 0; box-shadow: none; background: inherit;"
             onClick={() => {
               aboutDialog.show();
             }}
@@ -136,6 +128,7 @@ export function Game() {
             }}
           />
         </Show>
+
         <Table />
       </div>
     </div>
