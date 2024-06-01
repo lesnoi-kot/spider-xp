@@ -194,7 +194,7 @@ export async function dealCards() {
   const deckPlaceBox = document
     .getElementById(HIDDEN_DECK_ID)!
     .getBoundingClientRect();
-  const FLY_DURATION = 250;
+  const FLY_DURATION = 300;
   const FLY_DELAY = 100;
 
   loopedDealSound(getSlotsCount());
@@ -202,16 +202,17 @@ export async function dealCards() {
   await Promise.allSettled(
     dealtTableCards.map((card) => {
       const cardBox = document.getElementById(card.id)!.getBoundingClientRect();
+      const zIndex = 100 - card.column;
       return animateCardFly({
         card,
         duration: FLY_DURATION,
         delay: FLY_DELAY * card.column,
-        from: new DOMPointReadOnly(
-          deckPlaceBox.x - cardBox.x,
-          deckPlaceBox.y - cardBox.y
-        ),
-        to: new DOMPointReadOnly(0, 0),
-        zIndex: 100 - card.column,
+        from: {
+          x: deckPlaceBox.x - cardBox.x,
+          y: deckPlaceBox.y - cardBox.y,
+          zIndex,
+        },
+        to: { x: 0, y: 0, zIndex },
       });
     })
   );
@@ -240,6 +241,9 @@ function checkCardsGathered() {
       freezeUI();
       loopedDealSound(getSlotsCount());
 
+      const FLY_DURATION = 300;
+      const FLY_DELAY = 100;
+
       Promise.all(
         cards.map((card, i, arr) => {
           const order = arr.length - i - 1;
@@ -248,14 +252,14 @@ function checkCardsGathered() {
             .getBoundingClientRect();
           return animateCardFly({
             card,
-            duration: 250,
-            delay: 100 * order,
+            duration: FLY_DURATION,
+            delay: FLY_DELAY * order,
             from: { x: 0, y: 0 },
             to: {
               x: toBox.x - cardBox.x,
               y: toBox.y - cardBox.y,
+              zIndex: 10 + order,
             },
-            zIndex: 10 + order,
           }).then(() => {
             setGame("score", (score) => score + 10);
           });
@@ -343,10 +347,9 @@ export function modifyCard(id: string, input: Partial<TableCard>) {
 
 type CardFlyAnimationParams = {
   card: TableCard;
+  from: { x: number; y: number; zIndex?: number };
+  to: { x: number; y: number; zIndex?: number };
   duration: number;
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-  zIndex?: number;
   delay?: number;
 };
 
@@ -355,7 +358,6 @@ export async function animateCardFly({
   duration,
   from,
   to,
-  zIndex,
   delay,
 }: CardFlyAnimationParams) {
   modifyCard(card.id, {
@@ -363,6 +365,7 @@ export async function animateCardFly({
     translateY: from.y,
     transition: undefined,
     visible: true,
+    zIndex: from.zIndex,
   });
   if (typeof delay === "number") {
     await sleep(delay);
@@ -371,7 +374,7 @@ export async function animateCardFly({
     translateX: to.x,
     translateY: to.y,
     transition: `translate ${duration}ms`,
-    zIndex,
+    zIndex: to.zIndex,
   });
   await sleep(duration);
   modifyCard(card.id, {

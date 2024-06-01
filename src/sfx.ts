@@ -5,13 +5,17 @@ export const noHintAudio = new Audio("/sounds/no_hint.wav");
 export const selectAudio = new Audio("/sounds/select.wav");
 export const winAudio = new Audio("/sounds/win.wav");
 
+let loopedDealSoundTimer: number = -1;
+
 export function loopedDealSound(repeats: number) {
-  dealAudio.loop = true;
-  setTimeout(() => {
+  clearTimeout(loopedDealSoundTimer);
+  loopedDealSoundTimer = setTimeout(() => {
     dealAudio.pause();
     dealAudio.currentTime = 0;
     dealAudio.loop = false;
   }, dealAudio.duration * repeats * 1000);
 
+  dealAudio.currentTime = 0;
+  dealAudio.loop = true;
   dealAudio.play();
 }
